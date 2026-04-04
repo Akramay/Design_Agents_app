@@ -19,6 +19,7 @@
     
     <script>
         tailwind.config = {
+            darkMode: 'class', // Enables dark mode toggling
             theme: {
                 extend: {
                     fontFamily: {
@@ -33,28 +34,37 @@
             }
         }
     </script>
+    
+    <!-- Prevents screen flash before CSS loads -->
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
 </head>
-<body class="antialiased text-slate-800 selection:bg-indigo-100 overflow-x-hidden">
+<body class="antialiased text-slate-800 dark:text-slate-200 selection:bg-indigo-100 dark:selection:bg-indigo-900 overflow-x-hidden transition-colors duration-300">
 
     <!-- Modern Ambient Background -->
-    <div class="fixed top-0 left-0 -z-10 h-full w-full bg-slate-50">
-        <!-- Soft glowing orbs wrapped to prevent animation transform conflicts -->
+    <div class="fixed top-0 left-0 -z-10 h-full w-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+        <!-- Soft glowing orbs -->
         <div class="absolute bottom-auto left-auto right-0 top-0 h-[500px] w-[500px] -translate-x-[20%] translate-y-[10%]">
-            <div class="w-full h-full rounded-full bg-indigo-500/10 blur-[80px] animate-float-delayed-1"></div>
+            <div class="w-full h-full rounded-full bg-indigo-500/10 dark:bg-indigo-600/20 blur-[80px] animate-float-delayed-1"></div>
         </div>
         <div class="absolute top-auto bottom-0 left-0 right-auto h-[500px] w-[500px] translate-x-[20%] -translate-y-[20%]">
-            <div class="w-full h-full rounded-full bg-sky-500/10 blur-[80px] animate-float"></div>
+            <div class="w-full h-full rounded-full bg-sky-500/10 dark:bg-sky-600/10 blur-[80px] animate-float"></div>
         </div>
         <div class="absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2">
-            <div class="w-full h-full rounded-full bg-purple-500/5 blur-[100px]"></div>
+            <div class="w-full h-full rounded-full bg-purple-500/5 dark:bg-purple-600/10 blur-[100px]"></div>
         </div>
         
         <!-- Subtle grid pattern -->
-        <div class="absolute inset-0 bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20 dark:opacity-30"></div>
     </div>
 
     <!-- Navbar with integrated mobile slider -->
-    <nav class="fixed w-full top-0 z-50 glass border-b border-slate-200/50 flex flex-col transition-all duration-300">
+    <nav class="fixed w-full top-0 z-50 glass dark:bg-slate-900/80 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-col transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-20 bg-white/0">
             <div class="flex justify-between items-center h-20">
                 <!-- Logo -->
@@ -62,29 +72,41 @@
                     <div class="bg-primary p-2 rounded-xl text-white shadow-md shadow-indigo-500/20">
                         <i data-lucide="brain" class="w-6 h-6"></i>
                     </div>
-                    <span class="font-bold text-xl tracking-tight">AI Learning</span>
+                    <span class="font-bold text-xl tracking-tight dark:text-white">AI Learning</span>
                 </div>
 
                 <!-- Desktop Links -->
-                <div class="hidden md:flex items-center space-x-8 font-medium text-slate-600">
-                    <a href="#" class="hover:text-primary transition-colors text-slate-900">Home</a>
-                    <a href="#features" class="hover:text-primary transition-colors">Features</a>
-                    <a href="#how-it-works" class="hover:text-primary transition-colors">How It Works</a>
-                    <a href="#" class="hover:text-primary transition-colors">About</a>
-                    <a href="#" class="hover:text-primary transition-colors">Contact</a>
+                <div class="hidden md:flex items-center space-x-8 font-medium text-slate-600 dark:text-slate-300">
+                    <a href="#" class="hover:text-primary dark:hover:text-primary transition-colors text-slate-900 dark:text-white">Home</a>
+                    <a href="#features" class="hover:text-primary dark:hover:text-primary transition-colors">Features</a>
+                    <a href="#how-it-works" class="hover:text-primary dark:hover:text-primary transition-colors">How It Works</a>
+                    <a href="#" class="hover:text-primary dark:hover:text-primary transition-colors">About</a>
+                    <a href="#" class="hover:text-primary dark:hover:text-primary transition-colors">Contact</a>
                 </div>
 
-                <!-- Auth Buttons -->
+                <!-- Auth & Theme Buttons (Desktop) -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="#" class="font-medium text-slate-600 hover:text-primary transition-colors">Log In</a>
+                    <!-- Theme Toggle (Desktop) -->
+                    <button type="button" class="theme-toggle text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm p-2 transition-colors">
+                        <i data-lucide="moon" class="theme-toggle-dark-icon w-5 h-5 hidden"></i>
+                        <i data-lucide="sun" class="theme-toggle-light-icon w-5 h-5 hidden"></i>
+                    </button>
+                    
+                    <a href="#" class="font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">Log In</a>
                     <a href="#" class="bg-primary hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-md hover:shadow-lg hover:shadow-indigo-500/30 transform hover:-translate-y-0.5">
                         Get Started
                     </a>
                 </div>
 
-                <!-- Mobile menu button -->
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn" class="text-slate-600 hover:text-slate-900 focus:outline-none transition-colors p-1">
+                <!-- Mobile menu & theme button -->
+                <div class="md:hidden flex items-center gap-1">
+                    <!-- Theme Toggle (Mobile) -->
+                    <button type="button" class="theme-toggle text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg p-2 transition-colors">
+                        <i data-lucide="moon" class="theme-toggle-dark-icon w-5 h-5 hidden"></i>
+                        <i data-lucide="sun" class="theme-toggle-light-icon w-5 h-5 hidden"></i>
+                    </button>
+
+                    <button id="mobile-menu-btn" class="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus:outline-none transition-colors p-1 ml-1">
                         <i data-lucide="menu" id="icon-menu" class="w-7 h-7 block"></i>
                         <i data-lucide="x" id="icon-close" class="w-7 h-7 hidden"></i>
                     </button>
@@ -93,17 +115,17 @@
         </div>
 
         <!-- Mobile Menu Slider Dropdown -->
-        <div id="mobile-menu" class="md:hidden overflow-hidden max-h-0 transition-[max-height] duration-500 ease-in-out bg-white/40 backdrop-blur-md">
-            <div class="px-6 pb-6 space-y-4 pt-4 border-t border-slate-200/50">
-                <a href="#" class="block text-base font-semibold text-slate-600 hover:text-primary transition-colors">Home</a>
-                <a href="#features" class="block text-base font-semibold text-slate-600 hover:text-primary transition-colors">Features</a>
-                <a href="#how-it-works" class="block text-base font-semibold text-slate-600 hover:text-primary transition-colors">How It Works</a>
-                <a href="#" class="block text-base font-semibold text-slate-600 hover:text-primary transition-colors">About</a>
-                <a href="#" class="block text-base font-semibold text-slate-600 hover:text-primary transition-colors">Contact</a>
+        <div id="mobile-menu" class="md:hidden overflow-hidden max-h-0 transition-[max-height] duration-500 ease-in-out bg-white/40 dark:bg-slate-900/90 backdrop-blur-md">
+            <div class="px-6 pb-6 space-y-4 pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                <a href="#" class="block text-base font-semibold text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">Home</a>
+                <a href="#features" class="block text-base font-semibold text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">Features</a>
+                <a href="#how-it-works" class="block text-base font-semibold text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">How It Works</a>
+                <a href="#" class="block text-base font-semibold text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">About</a>
+                <a href="#" class="block text-base font-semibold text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">Contact</a>
                 
                 <!-- Auth Buttons -->
                 <div class="pt-4 flex flex-col space-y-3">
-                    <a href="#" class="w-full py-3 text-center rounded-xl border border-slate-200 bg-white/50 text-slate-700 font-bold hover:bg-slate-50 hover:border-slate-300 transition-all">
+                    <a href="#" class="w-full py-3 text-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
                         Log In
                     </a>
                     <a href="#" class="w-full py-3 text-center rounded-xl bg-primary text-white font-bold shadow-md shadow-indigo-500/30 hover:bg-indigo-700 transition-all">
@@ -120,17 +142,17 @@
             
             <!-- Left Content -->
             <div class="reveal">
-                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm text-primary text-sm font-semibold mb-6 border border-indigo-100 shadow-sm">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm text-primary dark:text-indigo-400 text-sm font-semibold mb-6 border border-indigo-100 dark:border-indigo-900 shadow-sm">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500 dark:text-indigo-400"></i>
                     AI-Powered Adaptive Education
                 </div>
                 
-                <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 text-slate-900 leading-tight drop-shadow-sm">
+                <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white leading-tight drop-shadow-sm">
                     Smart Learning <br>
                     <span class="text-gradient">Powered by AI</span>
                 </h1>
                 
-                <p class="text-lg text-slate-600 mb-8 max-w-xl leading-relaxed">
+                <p class="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-xl leading-relaxed">
                     Experience personalized education that adapts to your unique learning style. Our multi-agent AI system analyzes your progress and optimizes your path to mastery.
                 </p>
                 
@@ -139,25 +161,25 @@
                         Start Learning
                         <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
                     </button>
-                    <button class="bg-white/80 backdrop-blur-md hover:bg-white text-slate-700 border border-slate-200 shadow-sm hover:shadow-md px-8 py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="play" class="w-5 h-5 text-slate-500"></i>
+                    <button class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md px-8 py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="play" class="w-5 h-5 text-slate-500 dark:text-slate-400"></i>
                         Watch Demo
                     </button>
                 </div>
 
                 <!-- Stats -->
-                <div class="grid grid-cols-3 gap-8 pt-8 border-t border-slate-200/60">
+                <div class="grid grid-cols-3 gap-8 pt-8 border-t border-slate-200/60 dark:border-slate-800/60">
                     <div>
-                        <div class="text-3xl font-bold text-slate-900 mb-1">50K+</div>
-                        <div class="text-sm text-slate-500 font-medium">Active Learners</div>
+                        <div class="text-3xl font-bold text-slate-900 dark:text-white mb-1">50K+</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Active Learners</div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-slate-900 mb-1">97%</div>
-                        <div class="text-sm text-slate-500 font-medium">Satisfaction</div>
+                        <div class="text-3xl font-bold text-slate-900 dark:text-white mb-1">97%</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Satisfaction</div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-slate-900 mb-1">2.3x</div>
-                        <div class="text-sm text-slate-500 font-medium">Faster Learning</div>
+                        <div class="text-3xl font-bold text-slate-900 dark:text-white mb-1">2.3x</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Faster Learning</div>
                     </div>
                 </div>
             </div>
@@ -165,218 +187,218 @@
             <!-- Right Visual (Parallax/Floating) -->
             <div class="relative h-[500px] w-full hidden md:block" id="hero-visual">
                 <!-- Background Blob -->
-                <div class="absolute inset-0 bg-gradient-to-tr from-indigo-100/50 via-purple-50/50 to-blue-100/50 backdrop-blur-3xl rounded-[3rem] transform rotate-3 scale-105 border border-white/60 shadow-2xl"></div>
+                <div class="absolute inset-0 bg-gradient-to-tr from-indigo-100/50 via-purple-50/50 to-blue-100/50 dark:from-indigo-900/30 dark:via-purple-900/30 dark:to-blue-900/30 backdrop-blur-3xl rounded-[3rem] transform rotate-3 scale-105 border border-white/60 dark:border-slate-700/50 shadow-2xl"></div>
                 
                 <!-- Orbital rings (decorative) -->
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-slate-300/40 rounded-full border-dashed"></div>
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] border border-indigo-200/30 rounded-full border-solid"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-slate-300/40 dark:border-slate-600/40 rounded-full border-dashed"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] border border-indigo-200/30 dark:border-indigo-700/30 rounded-full border-solid"></div>
 
-                <!-- Central Icon Wrapper (Centering preserved while inner div floats) -->
+                <!-- Central Icon Wrapper -->
                 <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                    <div class="bg-gradient-to-br from-primary to-secondary w-32 h-32 rounded-3xl shadow-xl shadow-indigo-500/30 flex items-center justify-center animate-float border border-white/20">
+                    <div class="bg-gradient-to-br from-primary to-secondary w-32 h-32 rounded-3xl shadow-xl shadow-indigo-500/30 flex items-center justify-center animate-float border border-white/20 dark:border-white/10">
                         <i data-lucide="sparkles" class="w-12 h-12 text-white"></i>
                     </div>
                 </div>
 
                 <!-- Floating Cards -->
                 <!-- Top Left -->
-                <div class="absolute top-[10%] left-[5%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 animate-float-delayed-1 z-20">
-                    <div class="text-xs text-slate-500 font-medium mb-1">Knowledge Level</div>
-                    <div class="font-bold text-slate-800">Advanced</div>
+                <div class="absolute top-[10%] left-[5%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 dark:border-slate-700/50 animate-float-delayed-1 z-20">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Knowledge Level</div>
+                    <div class="font-bold text-slate-800 dark:text-slate-200">Advanced</div>
                 </div>
                 
                 <!-- Top Right -->
-                <div class="absolute top-[20%] right-[-5%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 animate-float z-20">
-                    <div class="text-xs text-slate-500 font-medium mb-1">Next Topic</div>
-                    <div class="font-bold text-slate-800">Neural Networks</div>
+                <div class="absolute top-[20%] right-[-5%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 dark:border-slate-700/50 animate-float z-20">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Next Topic</div>
+                    <div class="font-bold text-slate-800 dark:text-slate-200">Neural Networks</div>
                 </div>
 
                 <!-- Bottom Left -->
-                <div class="absolute bottom-[20%] left-[10%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 animate-float z-20">
-                    <div class="text-xs text-slate-500 font-medium mb-1">Quiz Score</div>
-                    <div class="font-bold text-slate-800 text-indigo-600">94%</div>
+                <div class="absolute bottom-[20%] left-[10%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 dark:border-slate-700/50 animate-float z-20">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Quiz Score</div>
+                    <div class="font-bold text-slate-800 dark:text-white text-indigo-600 dark:text-indigo-400">94%</div>
                 </div>
 
                 <!-- Bottom Right -->
-                <div class="absolute bottom-[5%] right-[10%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 animate-float-delayed-2 z-20">
-                    <div class="text-xs text-slate-500 font-medium mb-1">Study Streak</div>
-                    <div class="font-bold text-slate-800">12 Days <span class="text-orange-500">🔥</span></div>
+                <div class="absolute bottom-[5%] right-[10%] glass px-5 py-3 rounded-xl shadow-lg border-white/40 dark:border-slate-700/50 animate-float-delayed-2 z-20">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Study Streak</div>
+                    <div class="font-bold text-slate-800 dark:text-slate-200">12 Days <span class="text-orange-500">🔥</span></div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="py-24 bg-white/40 backdrop-blur-lg border-t border-slate-200/50">
+    <section id="features" class="py-24 bg-white/40 dark:bg-slate-900/40 backdrop-blur-lg border-t border-slate-200/50 dark:border-slate-800/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16 reveal">
-                <span class="bg-indigo-100/80 text-primary px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase mb-4 inline-block shadow-sm">Features</span>
-                <h2 class="text-4xl font-bold text-slate-900 mb-6 drop-shadow-sm">Everything you need to <span class="text-gradient">learn smarter</span></h2>
-                <p class="text-lg text-slate-600">Powered by intelligent agents that work together to create the optimal learning experience.</p>
+                <span class="bg-indigo-100/80 dark:bg-indigo-900/50 text-primary dark:text-indigo-400 px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase mb-4 inline-block shadow-sm">Features</span>
+                <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-6 drop-shadow-sm">Everything you need to <span class="text-gradient">learn smarter</span></h2>
+                <p class="text-lg text-slate-600 dark:text-slate-400">Powered by intelligent agents that work together to create the optimal learning experience.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <!-- Card 1 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal">
-                    <div class="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="git-merge" class="text-blue-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal">
+                    <div class="bg-blue-100 dark:bg-blue-900/40 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="git-merge" class="text-blue-600 dark:text-blue-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Personalized Learning Paths</h3>
-                    <p class="text-slate-600 leading-relaxed">AI creates unique study roadmaps tailored to your goals, pace, and knowledge gaps.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Personalized Learning Paths</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">AI creates unique study roadmaps tailored to your goals, pace, and knowledge gaps.</p>
                 </div>
 
                 <!-- Card 2 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 100ms;">
-                    <div class="bg-emerald-100 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="brain-circuit" class="text-emerald-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 100ms;">
+                    <div class="bg-emerald-100 dark:bg-emerald-900/40 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="brain-circuit" class="text-emerald-600 dark:text-emerald-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Adaptive Quizzes</h3>
-                    <p class="text-slate-600 leading-relaxed">MCQ, True/False, short answer, and essay questions that adjust difficulty in real-time.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Adaptive Quizzes</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">MCQ, True/False, short answer, and essay questions that adjust difficulty in real-time.</p>
                 </div>
 
                 <!-- Card 3 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 200ms;">
-                    <div class="bg-teal-100 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="message-square-text" class="text-teal-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 200ms;">
+                    <div class="bg-teal-100 dark:bg-teal-900/40 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="message-square-text" class="text-teal-600 dark:text-teal-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">AI-Generated Feedback</h3>
-                    <p class="text-slate-600 leading-relaxed">Instant, detailed explanations and personalized guidance on every answer you give.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">AI-Generated Feedback</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Instant, detailed explanations and personalized guidance on every answer you give.</p>
                 </div>
 
                 <!-- Card 4 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 0ms;">
-                    <div class="bg-orange-100 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="video" class="text-orange-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 0ms;">
+                    <div class="bg-orange-100 dark:bg-orange-900/40 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="video" class="text-orange-600 dark:text-orange-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Video & Resource Recommendations</h3>
-                    <p class="text-slate-600 leading-relaxed">Curated educational content matched to your current topic and learning style.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Video & Resource Recommendations</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Curated educational content matched to your current topic and learning style.</p>
                 </div>
 
                 <!-- Card 5 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 100ms;">
-                    <div class="bg-orange-50 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="bar-chart-2" class="text-orange-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 100ms;">
+                    <div class="bg-orange-50 dark:bg-orange-900/20 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="bar-chart-2" class="text-orange-600 dark:text-orange-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Progress Analytics</h3>
-                    <p class="text-slate-600 leading-relaxed">Visual dashboards showing your growth, strengths, and areas needing improvement.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Progress Analytics</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Visual dashboards showing your growth, strengths, and areas needing improvement.</p>
                 </div>
 
                 <!-- Card 6 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 200ms;">
-                    <div class="bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="git-commit" class="text-indigo-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 200ms;">
+                    <div class="bg-indigo-100 dark:bg-indigo-900/40 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="git-commit" class="text-indigo-600 dark:text-indigo-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Concept Prerequisite Tracking</h3>
-                    <p class="text-slate-600 leading-relaxed">Maps dependencies between topics to ensure solid foundations before advancing.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Concept Prerequisite Tracking</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Maps dependencies between topics to ensure solid foundations before advancing.</p>
                 </div>
 
                 <!-- Card 7 -->
-                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 0ms;">
-                    <div class="bg-purple-100 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
-                        <i data-lucide="refresh-cw" class="text-purple-600 w-6 h-6"></i>
+                <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-8 feature-card reveal" style="transition-delay: 0ms;">
+                    <div class="bg-purple-100 dark:bg-purple-900/40 w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="refresh-cw" class="text-purple-600 dark:text-purple-400 w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Continuous Improvement</h3>
-                    <p class="text-slate-600 leading-relaxed">Reinforcement learning agents that improve recommendations the more you learn.</p>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Continuous Improvement</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Reinforcement learning agents that improve recommendations the more you learn.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- How It Works Section -->
-    <section id="how-it-works" class="py-24 bg-slate-50/60 backdrop-blur-md border-t border-slate-200/50">
+    <section id="how-it-works" class="py-24 bg-slate-50/60 dark:bg-slate-950/60 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="mb-16 reveal">
-                <span class="bg-white text-primary px-4 py-1 rounded-full text-sm font-semibold tracking-wide mb-4 inline-block shadow-sm border border-slate-100">How It Works</span>
-                <h2 class="text-4xl font-bold text-slate-900 mb-6">Three steps to <span class="text-gradient">mastery</span></h2>
-                <p class="text-lg text-slate-600 max-w-2xl mx-auto">A seamless cycle of analysis, adaptation, and improvement drives your learning forward.</p>
+                <span class="bg-white dark:bg-slate-800 text-primary dark:text-indigo-400 px-4 py-1 rounded-full text-sm font-semibold tracking-wide mb-4 inline-block shadow-sm border border-slate-100 dark:border-slate-700">How It Works</span>
+                <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-6">Three steps to <span class="text-gradient">mastery</span></h2>
+                <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">A seamless cycle of analysis, adaptation, and improvement drives your learning forward.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
                 
                 <!-- Connecting Line (Desktop) -->
-                <div class="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-transparent via-indigo-200 to-transparent z-0"></div>
+                <div class="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-transparent via-indigo-200 dark:via-indigo-800 to-transparent z-0"></div>
 
                 <!-- Step 1 -->
                 <div class="relative z-10 reveal">
-                    <div class="w-24 h-24 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 relative shadow-md border border-slate-100">
+                    <div class="w-24 h-24 mx-auto bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6 relative shadow-md border border-slate-100 dark:border-slate-700">
                         <div class="absolute -top-3 -right-3 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md">01</div>
-                        <i data-lucide="scan-search" class="w-10 h-10 text-primary"></i>
+                        <i data-lucide="scan-search" class="w-10 h-10 text-primary dark:text-indigo-400"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Analyze</h3>
-                    <p class="text-slate-600 leading-relaxed">Our AI agents assess your knowledge level by analyzing answers, response time, hint usage, and question difficulty using probabilistic models.</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Analyze</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Our AI agents assess your knowledge level by analyzing answers, response time, hint usage, and question difficulty using probabilistic models.</p>
                 </div>
 
                 <!-- Step 2 -->
                 <div class="relative z-10 reveal" style="transition-delay: 150ms;">
-                    <div class="w-24 h-24 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 relative shadow-md border border-slate-100">
+                    <div class="w-24 h-24 mx-auto bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6 relative shadow-md border border-slate-100 dark:border-slate-700">
                         <div class="absolute -top-3 -right-3 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md">02</div>
-                        <i data-lucide="sliders-horizontal" class="w-10 h-10 text-primary"></i>
+                        <i data-lucide="sliders-horizontal" class="w-10 h-10 text-primary dark:text-indigo-400"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Adapt</h3>
-                    <p class="text-slate-600 leading-relaxed">The system dynamically adjusts your learning path, quiz difficulty, and content recommendations to match your current understanding.</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Adapt</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">The system dynamically adjusts your learning path, quiz difficulty, and content recommendations to match your current understanding.</p>
                 </div>
 
                 <!-- Step 3 -->
                 <div class="relative z-10 reveal" style="transition-delay: 300ms;">
-                    <div class="w-24 h-24 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 relative shadow-md border border-slate-100">
+                    <div class="w-24 h-24 mx-auto bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6 relative shadow-md border border-slate-100 dark:border-slate-700">
                         <div class="absolute -top-3 -right-3 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md">03</div>
-                        <i data-lucide="trending-up" class="w-10 h-10 text-primary"></i>
+                        <i data-lucide="trending-up" class="w-10 h-10 text-primary dark:text-indigo-400"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Improve</h3>
-                    <p class="text-slate-600 leading-relaxed">Through reinforcement learning, the system continuously optimizes itself — the more you learn, the better it teaches you.</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Improve</h3>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Through reinforcement learning, the system continuously optimizes itself — the more you learn, the better it teaches you.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- AI Capabilities Section -->
-    <section class="py-24 bg-white/40 backdrop-blur-lg border-y border-slate-200/50">
+    <section class="py-24 bg-white/40 dark:bg-slate-900/40 backdrop-blur-lg border-y border-slate-200/50 dark:border-slate-800/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 
                 <!-- Left Text -->
                 <div class="reveal">
-                    <span class="bg-teal-50 border border-teal-100 text-teal-600 px-3 py-1 rounded-full text-sm font-semibold tracking-wide mb-6 inline-block shadow-sm">AI Capabilities</span>
-                    <h2 class="text-4xl font-bold text-slate-900 mb-6 leading-tight drop-shadow-sm">Powered by a <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Multi-Agent</span> Intelligence System</h2>
-                    <p class="text-lg text-slate-600 mb-6 leading-relaxed">
+                    <span class="bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 text-teal-600 dark:text-teal-400 px-3 py-1 rounded-full text-sm font-semibold tracking-wide mb-6 inline-block shadow-sm">AI Capabilities</span>
+                    <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-6 leading-tight drop-shadow-sm">Powered by a <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Multi-Agent</span> Intelligence System</h2>
+                    <p class="text-lg text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
                         Our platform uses multiple specialized AI agents — each responsible for a different aspect of your learning journey. Together, they create an experience that's more effective than any single model could provide.
                     </p>
-                    <p class="text-lg text-slate-600 leading-relaxed">
+                    <p class="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
                         From assessing what you know, to choosing what to teach next, to generating feedback and adapting in real-time — every decision is backed by data and refined through reinforcement learning.
                     </p>
                 </div>
 
                 <!-- Right Cards Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-sm reveal feature-card">
-                        <i data-lucide="bot" class="text-primary w-6 h-6 mb-4"></i>
-                        <h4 class="font-bold text-slate-900 mb-2">Multi-Agent Architecture</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">Specialized AI agents for assessment, content delivery, feedback, and path optimization work in concert.</p>
+                    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm reveal feature-card">
+                        <i data-lucide="bot" class="text-primary dark:text-indigo-400 w-6 h-6 mb-4"></i>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2">Multi-Agent Architecture</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Specialized AI agents for assessment, content delivery, feedback, and path optimization work in concert.</p>
                     </div>
-                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-sm reveal feature-card" style="transition-delay: 100ms;">
-                        <i data-lucide="cpu" class="text-primary w-6 h-6 mb-4"></i>
-                        <h4 class="font-bold text-slate-900 mb-2">Probabilistic Estimation</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">Bayesian models estimate your mastery of each concept based on observed behaviors and performance.</p>
+                    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm reveal feature-card" style="transition-delay: 100ms;">
+                        <i data-lucide="cpu" class="text-primary dark:text-indigo-400 w-6 h-6 mb-4"></i>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2">Probabilistic Estimation</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Bayesian models estimate your mastery of each concept based on observed behaviors and performance.</p>
                     </div>
-                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-sm reveal feature-card">
-                        <i data-lucide="network" class="text-primary w-6 h-6 mb-4"></i>
-                        <h4 class="font-bold text-slate-900 mb-2">Reinforcement Engine</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">The system learns from every interaction, continuously improving recommendations and difficulty calibration.</p>
+                    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm reveal feature-card">
+                        <i data-lucide="network" class="text-primary dark:text-indigo-400 w-6 h-6 mb-4"></i>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2">Reinforcement Engine</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">The system learns from every interaction, continuously improving recommendations and difficulty calibration.</p>
                     </div>
-                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-sm reveal feature-card" style="transition-delay: 100ms;">
-                        <i data-lucide="zap" class="text-primary w-6 h-6 mb-4"></i>
-                        <h4 class="font-bold text-slate-900 mb-2">Real-Time Adaptation</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">Instant adjustments to learning content and difficulty as you work through material.</p>
+                    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm reveal feature-card" style="transition-delay: 100ms;">
+                        <i data-lucide="zap" class="text-primary dark:text-indigo-400 w-6 h-6 mb-4"></i>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2">Real-Time Adaptation</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Instant adjustments to learning content and difficulty as you work through material.</p>
                     </div>
-                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-sm reveal feature-card">
-                        <i data-lucide="shield-check" class="text-primary w-6 h-6 mb-4"></i>
-                        <h4 class="font-bold text-slate-900 mb-2">Behavioral Analysis</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">Response time, hint usage patterns, and question difficulty create a holistic learner profile.</p>
+                    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm reveal feature-card">
+                        <i data-lucide="shield-check" class="text-primary dark:text-indigo-400 w-6 h-6 mb-4"></i>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2">Behavioral Analysis</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Response time, hint usage patterns, and question difficulty create a holistic learner profile.</p>
                     </div>
-                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-sm reveal feature-card" style="transition-delay: 100ms;">
-                        <i data-lucide="globe" class="text-primary w-6 h-6 mb-4"></i>
-                        <h4 class="font-bold text-slate-900 mb-2">Knowledge Graph Nav</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">Concept prerequisite mapping ensures you build strong foundations before tackling advanced topics.</p>
+                    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm reveal feature-card" style="transition-delay: 100ms;">
+                        <i data-lucide="globe" class="text-primary dark:text-indigo-400 w-6 h-6 mb-4"></i>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2">Knowledge Graph Nav</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Concept prerequisite mapping ensures you build strong foundations before tackling advanced topics.</p>
                     </div>
                 </div>
             </div>
@@ -392,7 +414,6 @@
                 <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                     <div class="absolute -top-24 -left-24 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
                     <div class="absolute bottom-0 right-0 w-96 h-96 bg-cyan-400 opacity-20 rounded-full blur-3xl"></div>
-                    <!-- Additional grid overlay inside CTA -->
                     <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+CjxjaXJjbGUgY3g9IjEiIGN5PSIxIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMSkiLz4KPC9zdmc+')] opacity-50"></div>
                 </div>
 
@@ -420,7 +441,7 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-white/80 backdrop-blur-xl pt-16 pb-8 border-t border-slate-200/50">
+    <footer class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl pt-16 pb-8 border-t border-slate-200/50 dark:border-slate-800/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-16">
                 
@@ -430,50 +451,50 @@
                         <div class="bg-primary p-1.5 rounded-lg text-white shadow-sm">
                             <i data-lucide="brain" class="w-5 h-5"></i>
                         </div>
-                        <span class="font-bold text-xl tracking-tight text-slate-900">AI Learning</span>
+                        <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">AI Learning</span>
                     </div>
-                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                    <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
                         Intelligent Multi-Agent Adaptive Learning System — making education personal, effective, and accessible.
                     </p>
                     <!-- Social Links -->
                     <div class="flex gap-3">
-                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">X</a>
-                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">in</a>
-                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">GH</a>
-                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">YT</a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary dark:hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">X</a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary dark:hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">in</a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary dark:hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">GH</a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary dark:hover:bg-primary hover:text-white transition-all shadow-sm text-sm font-semibold">YT</a>
                     </div>
                 </div>
 
                 <!-- Links Columns -->
                 <div class="col-span-1">
-                    <h4 class="font-semibold text-slate-900 mb-6">Product</h4>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-6">Product</h4>
                     <ul class="space-y-4">
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Features</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">How It Works</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Pricing</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">FAQ</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Features</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">How It Works</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Pricing</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">FAQ</a></li>
                     </ul>
                 </div>
                 <div class="col-span-1">
-                    <h4 class="font-semibold text-slate-900 mb-6">Company</h4>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-6">Company</h4>
                     <ul class="space-y-4">
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">About</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Blog</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Careers</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Contact</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">About</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Blog</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Careers</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Contact</a></li>
                     </ul>
                 </div>
                 <div class="col-span-1">
-                    <h4 class="font-semibold text-slate-900 mb-6">Legal</h4>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-6">Legal</h4>
                     <ul class="space-y-4">
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Privacy Policy</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Terms of Service</a></li>
-                        <li><a href="#" class="text-slate-500 hover:text-primary transition-colors text-sm">Cookie Policy</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Privacy Policy</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Terms of Service</a></li>
+                        <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Cookie Policy</a></li>
                     </ul>
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-slate-200/50 text-sm text-slate-500">
+            <div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-slate-200/50 dark:border-slate-800/50 text-sm text-slate-500 dark:text-slate-400">
                 <p>&copy; 2026 AI Learning System. All rights reserved.</p>
                 <p class="mt-2 md:mt-0">Built with intelligence. Designed for learners.</p>
             </div>
@@ -483,9 +504,11 @@
     <!-- Custom Script Linked from Public Folder -->
     <script src="/js/script.js"></script>
 
-    <!-- Mobile Menu Interactivity (Accordion Slide-Down) -->
+    <!-- UI Interactivity Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Mobile Menu Logic (Accordion)
             const mobileMenu = document.getElementById('mobile-menu');
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             const iconMenu = document.getElementById('icon-menu');
@@ -496,29 +519,53 @@
             const toggleMenu = () => {
                 isMenuOpen = !isMenuOpen;
                 if (isMenuOpen) {
-                    // Open the accordion by expanding max-height
                     mobileMenu.classList.remove('max-h-0');
                     mobileMenu.classList.add('max-h-[500px]');
-                    // Swap icons
                     iconMenu.classList.add('hidden');
                     iconClose.classList.remove('hidden');
                 } else {
-                    // Close the accordion
                     mobileMenu.classList.remove('max-h-[500px]');
                     mobileMenu.classList.add('max-h-0');
-                    // Swap icons back
                     iconMenu.classList.remove('hidden');
                     iconClose.classList.add('hidden');
                 }
             };
 
-            // Toggle on hamburger button click
             mobileMenuBtn.addEventListener('click', toggleMenu);
-
-            // Automatically close the menu when a link inside it is clicked
             mobileLinks.forEach(link => {
                 link.addEventListener('click', () => {
                     if (isMenuOpen) toggleMenu();
+                });
+            });
+
+            // 2. Light / Dark Mode Toggle Logic
+            const themeToggles = document.querySelectorAll('.theme-toggle');
+            
+            // Function to swap the sun/moon icons on all toggle buttons
+            const updateIcons = (isDark) => {
+                document.querySelectorAll('.theme-toggle-dark-icon').forEach(el => el.classList.toggle('hidden', isDark));
+                document.querySelectorAll('.theme-toggle-light-icon').forEach(el => el.classList.toggle('hidden', !isDark));
+            };
+
+            // Set initial state of icons
+            const isDarkInitially = document.documentElement.classList.contains('dark');
+            updateIcons(isDarkInitially);
+
+            // Add click events to all theme toggles
+            themeToggles.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Check current state
+                    const isDark = document.documentElement.classList.contains('dark');
+                    
+                    if (isDark) {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('color-theme', 'light');
+                        updateIcons(false);
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('color-theme', 'dark');
+                        updateIcons(true);
+                    }
                 });
             });
         });

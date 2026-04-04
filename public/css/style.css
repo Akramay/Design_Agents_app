@@ -1,7 +1,7 @@
 /* Custom Animations & Effects */
 body {
     font-family: 'Inter', sans-serif;
-    color: #1e293b; /* slate-800 */
+    /* Removed hardcoded color so Tailwind can handle dark mode text switching */
 }
 
 /* Floating Animation */
@@ -15,18 +15,24 @@ body {
 .animate-float-delayed-1 { animation: float 6s ease-in-out 2s infinite; }
 .animate-float-delayed-2 { animation: float 6s ease-in-out 4s infinite; }
 
-/* Card Glow & Hover Effects - Adjusted to match screenshot */
+/* Card Glow & Hover Effects */
 .feature-card {
     transition: all 0.3s ease;
-    border: 1px solid #e2e8f0; /* slate-200 */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Subtle default shadow */
+    border: 1px solid #e2e8f0; /* Default border, handled by Tailwind dark classes mostly */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
+/* Light Mode Hover */
 .feature-card:hover {
-    transform: translateY(-4px); /* Slight lift */
-    border-color: #818df8; /* indigo-400 crisp border */
-    /* Adds a glowing outline combined with a soft drop shadow */
+    transform: translateY(-4px); 
+    border-color: #818cf8; 
     box-shadow: 0 0 0 1px #818cf8, 0 12px 20px -5px rgba(99, 102, 241, 0.15); 
+}
+
+/* Dark Mode Hover Override */
+.dark .feature-card:hover {
+    border-color: #6366f1; /* Slightly darker indigo for better contrast in dark mode */
+    box-shadow: 0 0 0 1px #6366f1, 0 12px 20px -5px rgba(99, 102, 241, 0.25); 
 }
 
 /* Gradient Text */
@@ -49,9 +55,14 @@ body {
     transform: translateY(0);
 }
 
-/* Glassmorphism */
+/* Glassmorphism fallback if Tailwind classes aren't used */
 .glass {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+    background: rgba(15, 23, 42, 0.8); /* slate-900 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
