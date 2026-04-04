@@ -1,0 +1,57 @@
+/* Custom Animations & Effects */
+body {
+    font-family: 'Inter', sans-serif;
+    color: #1e293b; /* slate-800 */
+}
+
+/* Floating Animation */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-delayed-1 { animation: float 6s ease-in-out 2s infinite; }
+.animate-float-delayed-2 { animation: float 6s ease-in-out 4s infinite; }
+
+/* Card Glow & Hover Effects - Adjusted to match screenshot */
+.feature-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0; /* slate-200 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Subtle default shadow */
+}
+
+.feature-card:hover {
+    transform: translateY(-4px); /* Slight lift */
+    border-color: #818df8; /* indigo-400 crisp border */
+    /* Adds a glowing outline combined with a soft drop shadow */
+    box-shadow: 0 0 0 1px #818cf8, 0 12px 20px -5px rgba(99, 102, 241, 0.15); 
+}
+
+/* Gradient Text */
+.text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(to right, #4f46e5, #0ea5e9);
+}
+
+/* Scroll Reveal Setup */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease-out;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Glassmorphism */
+.glass {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
