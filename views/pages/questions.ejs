@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questions — AI Learning</title>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/questions.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-inner">
+
+        <!-- Logo -->
+        <div class="nav-logo">
+            <div class="nav-logo-icon">
+                <i data-lucide="brain"></i>
+            </div>
+            <span class="nav-logo-text">AI Learning</span>
+        </div>
+
+        <!-- Desktop Links -->
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/learn">Learning</a>
+            <a href="/questions" class="active">Questions</a>
+        </div>
+
+        <!-- Right: Theme + Mobile btn -->
+        <div class="nav-actions">
+            <button type="button" id="theme-toggle" class="theme-btn" title="Toggle theme">
+                <i data-lucide="sun" id="icon-sun"></i>
+                <i data-lucide="moon" id="icon-moon" style="display:none;"></i>
+            </button>
+            <button id="mobile-menu-btn" class="mobile-btn" title="Menu">
+                <i data-lucide="menu" id="icon-menu"></i>
+                <i data-lucide="x" id="icon-close" style="display:none;"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu">
+        <a href="/">Home</a>
+        <a href="/learn">Learning</a>
+        <a href="/questions" class="active">Questions</a>
+    </div>
+</nav>
+
+
+
+<div class="container">
+
+    <!-- STEP 1 -->
+    <div id="step1">
+        <div class="step-label">Step 1 of 3 &nbsp;·&nbsp; Setup</div>
+        <div class="card glass">
+            <h2>Choose Your Department</h2>
+            <p class="subtitle">Start by selecting your field of study. We'll tailor the quiz to your curriculum.</p>
+
+            <div class="select-wrapper">
+                <select id="department">
+                    <option value="">Select a department…</option>
+                    <option value="cs">💻 Computer Science</option>
+                    <option value="eng">⚙️ Engineering</option>
+                    <option value="business">📈 Business</option>
+                </select>
+            </div>
+
+            <button class="btn-primary" onclick="goToCourses()">Continue →</button>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="step2" class="hidden">
+        <div class="step-label">Step 2 of 3 &nbsp;·&nbsp; Course</div>
+        <div class="card glass">
+            <h2>Select a Course</h2>
+            <p class="subtitle">Pick the course you'd like to be tested on.</p>
+
+            <div class="select-wrapper">
+                <select id="course"></select>
+            </div>
+
+            <button class="btn-primary" onclick="startQuestions()">Start Quiz 🚀</button>
+            <button class="btn-ghost" onclick="goBack(1)">← Back</button>
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="step3" class="hidden">
+        <div class="step-label">Step 3 of 3 &nbsp;·&nbsp; Quiz</div>
+
+        <div class="question-card glass">
+
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+
+            <div class="q-meta">
+                <span class="q-badge" id="topicBadge">AI</span>
+                <span class="q-counter" id="questionCounter"></span>
+            </div>
+
+            <h3 id="questionText"></h3>
+
+            <div id="options"></div>
+
+            <div class="divider"></div>
+
+            <button class="hint-btn" onclick="toggleHint()">💡 Show Hint</button>
+
+            <div id="hintBox" class="hint hidden">
+                <p id="hintText"></p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="/js/questions.js"></script>
+
+</body>
+</html>
