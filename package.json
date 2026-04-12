@@ -1,10 +1,19 @@
 {
+  "name": "design-agents-app",
+  "version": "1.0.0",
+  "description": "AI Learning Smart Education",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch"
+  },
   "dependencies": {
     "ejs": "^3.1.9",
     "express": "^4.18.2",
     "express-session": "^1.18.0"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2"
