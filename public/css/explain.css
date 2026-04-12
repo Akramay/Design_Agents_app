@@ -1,0 +1,188 @@
+:root {
+    --bg: #020617;
+    --grid: rgba(99,102,241,0.08);
+    --card: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.08);
+    --text-primary: #e2e8f0;
+    --text-muted: #94a3b8;
+    --purple: #6366f1;
+    --purple2: #8b5cf6;
+}
+
+/* Update the root class for JS access */
+.light-mode {
+    --bg: #f8fafc;
+    --grid: rgba(99,102,241,0.05);
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+}
+
+/* Global Transition Class */
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    /* Smooth Transition */
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Transition specific components */
+.navbar, .card, .upload-box, .theme-btn, .nav-center a, .bg-grid {
+    transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* GRID BACKGROUND */
+.bg-grid {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* NAVBAR */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+}
+
+.light-mode .navbar {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.nav-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-left, .nav-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.nav-center {
+    display: flex;
+    gap: 24px;
+}
+
+.nav-logo-icon {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--purple), var(--purple2));
+    border-radius: 8px;
+    color: white;
+    margin-right: 10px;
+}
+
+.nav-logo-text { font-weight: 700; }
+
+.nav-center a {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nav-center a.active, .nav-center a:hover { color: var(--text-primary); }
+.nav-right { justify-content: flex-end; }
+
+/* THEME BUTTON */
+.theme-btn {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text-primary);
+    padding: 0;
+}
+
+/* MAIN */
+.container {
+    max-width: 800px;
+    margin: 140px auto 40px;
+    padding: 0 20px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 60px 40px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.card h1 { font-size: 32px; margin-bottom: 12px; }
+.card p { color: var(--text-muted); margin-bottom: 32px; }
+
+/* UPLOAD BOX */
+.upload-box {
+    display: block;
+    margin: 0 auto;
+    padding: 40px;
+    border-radius: 16px;
+    border: 2px dashed var(--border);
+    cursor: pointer;
+}
+
+.upload-box:hover {
+    border-color: var(--purple);
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+/* BUTTON */
+#analyzeBtn {
+    margin-top: 24px;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, var(--purple), var(--purple2));
+    cursor: pointer;
+}
+
+#analyzeBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.hidden { display: none; }

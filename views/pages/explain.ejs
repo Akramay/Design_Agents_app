@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explain Lecture | AI Learning</title>
+    <link rel="stylesheet" href="/css/explain.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (localStorage.getItem("theme") === "light") {
+            document.documentElement.classList.add("light-mode");
+        }
+    </script>
+</head>
+<body class="theme-transition">
+
+<nav class="navbar">
+    <div class="nav-inner">
+        <div class="nav-left">
+            <div class="nav-logo-icon">
+                <i data-lucide="brain"></i>
+            </div>
+            <span class="nav-logo-text">AI Learning</span>
+        </div>
+
+        <div class="nav-center">
+            <a href="/" class="active">Home</a>
+            <a href="/learn">Learning</a>
+        </div>
+
+        <div class="nav-right">
+            <button id="theme-toggle" class="theme-btn">
+                <i data-lucide="sun" id="icon-sun"></i>
+                <i data-lucide="moon" id="icon-moon" style="display:none;"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="bg-grid"></div>
+
+<div class="container">
+    <div class="card upload-card">
+        <h1>Upload Your Lecture</h1>
+        <p>Upload a PDF, image, or text file and get a simple AI explanation.</p>
+
+        <label class="upload-box">
+            <input type="file" id="fileInput" hidden>
+            <div class="upload-content">
+                <i data-lucide="upload-cloud"></i>
+                <span>Click to upload or drag & drop</span>
+            </div>
+        </label>
+
+        <button id="analyzeBtn" disabled>Generate Explanation →</button>
+    </div>
+
+    <div id="resultCard" class="card result-card hidden">
+        <h2>AI Explanation</h2>
+        <div id="loading" class="loading hidden">Analyzing your lecture...</div>
+        <div id="resultText"></div>
+    </div>
+</div>
+
+<script src="/js/explain.js"></script>
+</body>
+</html>
