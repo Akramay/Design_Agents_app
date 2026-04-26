@@ -1,0 +1,28 @@
+# requirements.txt
+# Install all dependencies with: pip install -r requirements.txt
+
+# ── Core NLP ──────────────────────────────────────────────────
+spacy==3.7.4
+# After installing spacy, run:
+# python -m spacy download en_core_web_sm
+
+# ── Lecture file parsing ───────────────────────────────────────
+python-pptx==0.6.23       # .ppt / .pptx files
+PyMuPDF==1.24.1           # .pdf files  (import as: import fitz)
+python-docx==1.1.0        # .docx files
+markitdown==0.0.1         # universal fallback parser
+
+# ── Local LLM ─────────────────────────────────────────────────
+ollama==0.2.1
+# After installing ollama app, run in terminal:
+# ollama pull llama3
+
+# ── YouTube API ───────────────────────────────────────────────
+requests==2.31.0
+
+# ── Web framework (for UI integration) ────────────────────────
+flask==3.0.3
+flask-cors==4.0.0         # needed if frontend is on different port
+
+# ── Utilities ─────────────────────────────────────────────────
+python-dotenv==1.0.1      # for loading YOUTUBE_API_KEY from .env file

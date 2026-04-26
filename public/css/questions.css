@@ -422,6 +422,29 @@ button {
     box-shadow: none;
 }
 
+.end-session-btn {
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 99px;
+    color: #f87171;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 12px;
+}
+
+.end-session-btn:hover {
+    background: rgba(239, 68, 68, 0.18);
+    transform: none;
+    box-shadow: none;
+}
+
 .hint {
     padding: 16px 20px;
     border-radius: var(--radius-md);

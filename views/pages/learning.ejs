@@ -1,35 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Learning Options</title>
-    <link rel="stylesheet" href="/css/learning.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learn · AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/learning.css">
 </head>
 <body>
 
-<div class="container">
-    <h1>Choose Your Learning Mode</h1>
-    <p>Select how you want to continue learning</p>
+<div class="app">
 
-    <div class="cards">
+  <div class="topbar">
+    <div class="logo">
+      <span class="logo-dot"></span>
+      <span class="logo-text">learn</span><span class="logo-accent">·ai</span>
+    </div>
+    <div class="topbar-right">
+      <a href="#" class="nav-link">How it works</a>
+      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">
+        <svg id="themeIcon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+    </div>
+  </div>
 
-        <a href="/learn/video" class="card">
-            <h2>🎥 Recommend Video</h2>
-            <p>Get a video tailored to your topic</p>
-        </a>
+  <!-- ══════════════════════════════════════
+       HERO
+  ══════════════════════════════════════ -->
+  <div class="hero">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      AI-Powered Learning
+    </div>
+    <h1>Learn with <span class="gradient">AI</span></h1>
+    <p>Upload any lecture file and instantly generate smart questions, explanations, and insights — powered by Claude AI.</p>
+  </div>
 
-        <a href="/learn/questions" class="card">
-            <h2>❓ Questions</h2>
-            <p>Practice with smart adaptive questions</p>
-        </a>
+  <!-- ══════════════════════════════════════
+       STATE: UPLOAD
+  ══════════════════════════════════════ -->
+  <div id="stateUpload" class="state active">
+    <div class="upload-section">
 
-        <a href="/learn/explain" class="card">
-            <h2>📘 Explain Content</h2>
-            <p>Understand the topic step by step</p>
-        </a>
+      <div class="drop-area" id="dropArea"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+
+        <div class="drop-icon-wrap">
+          <svg viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+
+        <div class="drop-title">Drop your lecture here</div>
+        <div class="drop-sub">Drag &amp; drop or click to browse files from your device</div>
+
+        <div class="file-types">
+          <%
+            const types = typeof acceptedTypes !== 'undefined'
+              ? acceptedTypes
+              : ['PDF', 'PPT', 'PPTX', 'DOC', 'DOCX', 'TXT'];
+          %>
+          <% types.forEach(function(t) { %>
+            <span class="file-tag"><%= t %></span>
+          <% }); %>
+        </div>
+
+        <button class="upload-btn"
+                onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
+          Browse Files
+        </button>
+      </div>
+
+      <input type="file" id="fileInput"
+             accept="<%= typeof fileAccept !== 'undefined' ? fileAccept : '.pdf,.ppt,.pptx,.doc,.docx,.txt' %>"
+             onchange="onFileSelect(this.files[0])">
+
+      <!-- File preview (hidden until a file is chosen) -->
+      <div class="file-preview-card hidden" id="filePreview">
+        <div class="file-icon-box" id="fileIcon">FILE</div>
+        <div class="file-info">
+          <div class="file-name" id="fileName">—</div>
+          <div class="file-meta">
+            <span id="fileSize">0 MB</span>
+            <span>·</span>
+            <span class="file-status">
+              <span class="status-dot"></span>Ready to analyze
+            </span>
+          </div>
+        </div>
+        <button class="file-remove" onclick="removeFile()" title="Remove file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Generate button (hidden until a file is chosen) -->
+      <div class="gen-area hidden" id="genArea">
+        <button class="gen-btn" id="genBtn" onclick="startProcessing()">
+          ✦ &nbsp;Generate Questions
+        </button>
+      </div>
 
     </div>
+  </div><!-- /stateUpload -->
+
+  <!-- ══════════════════════════════════════
+       STATE: PROCESSING
+  ══════════════════════════════════════ -->
+  <div id="stateProcessing" class="state">
+    <div class="processing-state">
+
+      <div class="proc-icon">
+        <svg viewBox="0 0 24 24">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+
+      <div class="proc-title">Analyzing your lecture</div>
+      <div class="proc-sub">This usually takes just a few seconds</div>
+
+      <%
+        const procSteps = typeof processingSteps !== 'undefined'
+          ? processingSteps
+          : [
+              'Reading document structure…',
+              'Extracting key concepts…',
+              'Generating smart questions…',
+              'Formatting results…'
+            ];
+      %>
+      <div class="proc-steps" id="procSteps">
+        <% procSteps.forEach(function(label, idx) { %>
+          <div class="proc-step <%= idx === 0 ? 'active' : '' %>" id="procStep<%= idx + 1 %>">
+            <div class="step-icon">
+              <div class="<%= idx === 0 ? 'spin-ring' : 'pending-dot' %>"></div>
+            </div>
+            <span><%= label %></span>
+          </div>
+        <% }); %>
+      </div>
+
+    </div>
+  </div><!-- /stateProcessing -->
+
+  <!-- ══════════════════════════════════════
+       STATE: RESULTS
+  ══════════════════════════════════════ -->
+  <div id="stateResults" class="state">
+
+    <div class="results-header">
+      <div class="results-title" id="resultsTitle">Your Questions are Ready ✦</div>
+      <div class="results-actions">
+        <button class="act-btn" onclick="regenerate()">
+          <svg viewBox="0 0 24 24">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Regenerate
+        </button>
+        <button class="act-btn" onclick="makeHarder()">
+          <svg viewBox="0 0 24 24">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Make Harder
+        </button>
+      </div>
+    </div>
+
+    <div class="content-grid">
+
+      <!-- ── LEFT: Lecture Preview Panel ── -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Lecture Preview</div>
+          <div class="panel-tag" id="docBadge">FILE</div>
+        </div>
+
+        <div class="lecture-body">
+          <div class="doc-card">
+            <div class="doc-card-title" id="docTitle">—</div>
+            <div class="doc-line" style="width:100%"></div>
+            <div class="doc-line" style="width:87%"></div>
+            <div class="doc-line" style="width:94%"></div>
+            <div class="doc-line" style="width:73%"></div>
+            <div class="doc-section"></div>
+            <div class="doc-line" style="width:98%"></div>
+            <div class="doc-line" style="width:81%"></div>
+            <div class="doc-line" style="width:90%"></div>
+            <div class="doc-line" style="width:66%"></div>
+          </div>
+
+          <div class="page-nav">
+            <button class="page-nav-btn">← Prev</button>
+            <span class="page-indicator" id="pageIndicator">Page 1</span>
+            <button class="page-nav-btn">Next →</button>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">Words</div>
+              <div class="meta-val" id="metaWords">—</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Pages</div>
+              <div class="meta-val" id="metaPages">—</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Questions</div>
+              <div class="meta-val" id="metaQCount">—</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Difficulty</div>
+              <div class="meta-val" id="metaDiff">—</div>
+            </div>
+          </div>
+
+          <div class="topics-list" id="topicsList"></div>
+        </div>
+      </div><!-- /lecture panel -->
+
+      <!-- ── RIGHT: Questions Panel ── -->
+      <div class="questions-panel-wrap">
+
+        <div class="panel-header">
+          <div class="panel-title">Generated Questions</div>
+          <div class="panel-tag" id="qCountBadge">0 questions</div>
+        </div>
+
+        <div class="q-list" id="qList"></div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+          <button class="act-btn primary" onclick="revealAll()">
+            <svg viewBox="0 0 24 24">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Explain Answers
+          </button>
+          <button class="act-btn" onclick="expandAll()">
+            <svg viewBox="0 0 24 24">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+            Expand All
+          </button>
+          <button class="act-btn" onclick="exportPDF()">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export PDF
+          </button>
+        </div>
+
+        <!-- Chat input -->
+        <div class="chat-wrap">
+          <div class="chat-label">Ask about this lecture</div>
+          <div class="chat-input-row">
+            <input class="chat-input" type="text" id="chatInput"
+                   placeholder="<%= typeof chatPlaceholder !== 'undefined' ? chatPlaceholder : 'e.g. Explain this concept in simple terms…' %>"
+                   onkeydown="onChatKey(event)">
+            <button class="chat-send" onclick="sendChat()">
+              <svg viewBox="0 0 24 24">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="chat-hint">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Powered by Claude AI · Answers are based on your uploaded lecture
+          </div>
+        </div>
+
+      </div><!-- /questions panel -->
+
+    </div><!-- /content-grid -->
+
+    <div class="reset-area">
+      <button class="act-btn" onclick="resetApp()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Upload Another Lecture
+      </button>
+    </div>
+
+  </div><!-- /stateResults -->
+
+</div><!-- /app -->
+
+<!-- NOTIFICATION TOAST -->
+<div class="notif hide" id="notif">
+  <div class="notif-icon">
+    <svg viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  </div>
+  <span id="notifText">Done!</span>
 </div>
+
+<script src="/js/learning.js"></script>
 
 </body>
 </html>
