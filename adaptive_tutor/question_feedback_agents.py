@@ -105,15 +105,19 @@ Return ONLY this JSON (no markdown, no explanation):
   "expected_time_seconds": {expected_time}
 }}"""
 
-        response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": prompt}]
-        )
+        try:
+            response = ollama.chat(
+                model="llama3",
+                messages=[{"role": "user", "content": prompt}]
+            )
 
-        raw = response["message"]["content"].strip()
-        # strip markdown if present
-        raw = re.sub(r"```json\s*", "", raw)
-        raw = re.sub(r"```\s*", "", raw)
+            raw = response["message"]["content"].strip()
+            # strip markdown if present
+            raw = re.sub(r"```json\s*", "", raw)
+            raw = re.sub(r"```\s*", "", raw)
+        except Exception as e:
+            print(f"  [QuestionAgent] Error occurred while calling LLM: {e}")
+            raw = "fallback lexical grader"
 
         try:
             question = json.loads(raw)
@@ -264,10 +268,17 @@ Write ONE short hint (2-3 sentences max).
 - Do NOT repeat the question
 Just the hint text, nothing else."""
 
-        response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": prompt}]
-        )
+        try:
+            response = ollama.chat(
+                model="llama3",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response["message"]["content"].strip()
+        except Exception:
+            return (
+                f"Focus on the core idea behind {p['concept']}. "
+                f"Try to connect the concept to the key points in the question before answering."
+            )
         return response["message"]["content"].strip()
 
     def _generate_explanation(self, p: dict) -> str:
@@ -286,10 +297,18 @@ Write a clear, friendly explanation (3-5 sentences) that:
 
 Just the explanation text, nothing else."""
 
-        response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": prompt}]
-        )
+        try:
+            response = ollama.chat(
+                model="llama3",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response["message"]["content"].strip()
+        except Exception:
+            return (
+                f"{p['concept']} is the main idea being tested here. "
+                f"A strong answer should mention {', '.join(p['question'].get('key_points', [])[:3]) or 'the concept definition'}. "
+                f"Try relating it to a simple example from the lecture."
+            )
         return response["message"]["content"].strip()
 
     def _search_youtube(self, concept: str) -> list:

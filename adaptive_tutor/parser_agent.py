@@ -31,9 +31,8 @@ class ParserAgent(BaseAgent):
         try:
             self.nlp = spacy.load("en_core_web_sm")
         except OSError:
-            print("  [ParserAgent] spaCy model not found.")
-            print("  Run: python -m spacy download en_core_web_sm")
-            raise
+            print("  Falling back to lightweight text heuristics.")
+            self.nlp = None
 
     # ── PERCEIVE ─────────────────────────────────────────────
     def perceive(self):
@@ -195,6 +194,8 @@ class ParserAgent(BaseAgent):
 
     def _extract_noun_phrases(self, slides: list) -> list:
         """Use spaCy to extract meaningful noun phrases from all slides."""
+        if self.nlp is None:
+            return self._extract_candidate_phrases_fallback(slides)
         all_phrases = []
         for slide in slides:
             doc = self.nlp(slide[:1000])  # limit per slide for speed
@@ -204,7 +205,32 @@ class ParserAgent(BaseAgent):
                 if len(text.split()) >= 2 and len(text) > 5:
                     all_phrases.append(text)
         return all_phrases
+    def _extract_candidate_phrases_fallback(self, slides: list) -> list:
+        """
+        Heuristic fallback when the spaCy model is unavailable.
+        It prefers short heading-like lines and repeated 2-4 word phrases.
+        """
+        phrases = []
 
+        for slide in slides:
+            for raw_line in slide.splitlines():
+                line = re.sub(r"[^A-Za-z0-9\-\s]", " ", raw_line).strip()
+                if not line:
+                    continue
+
+                words = [w for w in line.lower().split() if len(w) > 2]
+                if 2 <= len(words) <= 6:
+                    phrases.append(" ".join(words))
+
+                for n in (2, 3, 4):
+                    for i in range(len(words) - n + 1):
+                        gram = words[i:i + n]
+                        if all(word.isalpha() for word in gram):
+                            phrases.append(" ".join(gram))
+
+        return phrases
+
+    
     def _clean_candidates(self, phrases: list) -> list:
         """
         Clean, deduplicate, and rank candidate concept phrases.
@@ -271,12 +297,15 @@ Example format:
 
 Return ONLY the JSON array, no explanation, no markdown code blocks."""
 
-        response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        raw = response["message"]["content"].strip()
+        try:
+            response = ollama.chat(
+                model="llama3",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            raw = response["message"]["content"].strip()
+        except Exception as e:
+            print(f"  [ParserAgent] Error occurred while calling LLM: {e}")
+            raw = "fallback lexical grader"
 
         # strip markdown code blocks if LLM added them
         raw = re.sub(r"```json\s*", "", raw)
@@ -287,10 +316,9 @@ Return ONLY the JSON array, no explanation, no markdown code blocks."""
             # sort by difficulty to guarantee order
             graph.sort(key=lambda x: x.get("difficulty", 1))
             return graph
-        except json.JSONDecodeError as e:
-            print(f"  [ParserAgent] WARNING: LLM returned invalid JSON: {e}")
-            print(f"  [ParserAgent] Raw response: {raw[:200]}")
-            # fallback: create simple graph from candidates
+        except Exception as e:
+            print(f"  [ParserAgent] WARNING: LLM graph generation failed: {e}")
+           
             return [
                 {
                     "concept": c.title(),

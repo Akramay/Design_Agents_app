@@ -15,6 +15,7 @@ It coordinates without doing the specialists' jobs itself.
 
 import json
 import re
+from urllib import response
 import ollama
 
 from base_agent import BaseAgent
@@ -148,7 +149,6 @@ class OrchestratorAgent(BaseAgent):
 
         # ── Step 3: Update student history ───────────────
         model[concept]["attempts"] += 1
-        model[concept]["history"].append("correct" if correct else "wrong")
         if correct:
             model[concept]["correct_streak"] = model[concept].get("correct_streak", 0) + 1
         else:
@@ -223,13 +223,22 @@ Partial credit counts as correct if the core idea is right.
 Reply with ONLY: true
 Or reply with ONLY: false"""
 
-        response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": prompt}]
-        )
+        try:
+            response = ollama.chat(
+                model="llama3",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            result = response["message"]["content"].strip().lower()
+            correct = "true" in result
+        except Exception:
+            result = "fallback lexical grader"
+            expected = " ".join(question.get("key_points", [])).lower().split()
+            answer_words = set(answer_text.lower().split())
+            overlap = sum(1 for word in expected if word in answer_words)
+            correct = overlap >= max(1, len(expected) // 4)
+
         result = response["message"]["content"].strip().lower()
         correct = "true" in result
-
         print(f"  [Orchestrator] Grading result: {'✓ CORRECT' if correct else '✗ WRONG'}")
         print(f"  [Orchestrator] LLM grader said: \"{result}\"")
 
@@ -311,23 +320,45 @@ Action guide:
 
         print(f"  [Orchestrator] Sending reasoning prompt to LLM...")
 
-        response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": prompt}]
-        )
+        try:
+            response = ollama.chat(
+                model="llama3",
+                messages=[{"role": "user", "content": prompt}]
+            )
+        except Exception as e:
+            print(f"  [Orchestrator] Error occurred while calling LLM: {e}")
+            response = {"message": {"content": "fallback lexical grader"}}
 
         raw = response["message"]["content"].strip()
         raw = re.sub(r"```json\s*", "", raw)
         raw = re.sub(r"```\s*", "", raw)
 
+        if all_mastered:
+                action = "SESSION_COMPLETE"
+                msg = "You have mastered all detected concepts in this lecture."
+        elif model["mastered"]:
+                action = "NEXT_CONCEPT"
+                msg = f"You have likely mastered {concept}. Moving to the next concept."
+        elif not correct and bkt_p < 0.35:
+                action = "SHOW_EXPLANATION"
+                msg = f"Let's slow down and reinforce {concept} with an explanation."
+        elif not correct:
+                action = "DECREASE_DIFFICULTY"
+                msg = f"We'll stay with {concept} and make the next question more approachable."
+        elif time_ratio < 0.8 and theta >= 0:
+                action = "INCREASE_DIFFICULTY"
+                msg = f"Nice work on {concept}. The next question can be a little harder."
+        else:
+                action = "KEEP_LEVEL"
+                msg = f"Good progress on {concept}. Let's gather one more signal at a similar level."
         try:
             decision = json.loads(raw)
         except json.JSONDecodeError:
             # safe fallback
             decision = {
-                "reasoning":          "Unable to parse LLM response — defaulting to keep level.",
-                "action":             "KEEP_LEVEL",
-                "message_to_student": "Good effort! Let's try another question.",
+                "reasoning": "Fallback tutor policy selected the next action from BKT, IRT, and answer correctness.",
+                "action": action,
+                "message_to_student": msg,
             }
 
         print(f"\n  [Orchestrator] LLM Decision:")

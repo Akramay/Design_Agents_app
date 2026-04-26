@@ -1,598 +1,439 @@
-/**
- * learning.js
- * ───────────
- * Connects your existing EJS UI to the Python Flask backend.
- * Your learning.ejs stays 100% unchanged.
- *
- * Flow:
- *   1. Student drops file  → calls /api/setup   → Python ParserAgent runs
- *   2. Student answers     → calls /api/answer  → BKT + IRT + LLM run
- *   3. UI updates with question, thinking log, feedback, videos
- */
+'use strict';
 
-// ── Python API base URL ─────────────────────────────────────
-// Change port if your Flask runs on a different one
-const API_BASE = "http://localhost:3000";
+const App = {
+  selectedFile: null,
+  questionStartedAt: null,
+  procTimers: [],
+  notifTimer: null,
+  session: null,
+};
 
-// ── App state ───────────────────────────────────────────────
-let currentFile      = null;
-let sessionActive    = false;
-let questionStartTime = null;   // when current question was shown
-let currentQuestion  = null;    // full question object from Python
-let isDark           = false;
-
-// ═══════════════════════════════════════════════════════════
-//  THEME
-// ═══════════════════════════════════════════════════════════
 function toggleTheme() {
-  isDark = !isDark;
-  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-  document.getElementById("themeLabel").textContent = isDark ? "Light mode" : "Dark mode";
-  document.getElementById("themeIcon").innerHTML = isDark
-    ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
-    : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('themeLabel').textContent = isDark ? 'Light mode' : 'Dark mode';
+  const icon = document.getElementById('themeIcon');
+  icon.innerHTML = isDark
+    ? `<circle cx="12" cy="12" r="5"/>
+       <line x1="12" y1="1" x2="12" y2="3"/>
+       <line x1="12" y1="21" x2="12" y2="23"/>
+       <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+       <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+       <line x1="1" y1="12" x2="3" y2="12"/>
+       <line x1="21" y1="12" x2="23" y2="12"/>
+       <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+       <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`
+    : `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  FILE HANDLING
-// ═══════════════════════════════════════════════════════════
 function onDragOver(e) {
   e.preventDefault();
-  document.getElementById("dropArea").classList.add("drag-over");
+  document.getElementById('dropArea').classList.add('dragging');
 }
-function onDragLeave(e) {
-  document.getElementById("dropArea").classList.remove("drag-over");
+
+function onDragLeave() {
+  document.getElementById('dropArea').classList.remove('dragging');
 }
+
 function onDrop(e) {
   e.preventDefault();
-  document.getElementById("dropArea").classList.remove("drag-over");
+  document.getElementById('dropArea').classList.remove('dragging');
   const file = e.dataTransfer.files[0];
   if (file) onFileSelect(file);
 }
 
 function onFileSelect(file) {
   if (!file) return;
+  App.selectedFile = file;
 
-  const allowed = ["pdf","ppt","pptx","doc","docx","txt"];
-  const ext = file.name.split(".").pop().toLowerCase();
-  if (!allowed.includes(ext)) {
-    showNotif("Unsupported file type. Use PDF, PPT, PPTX, DOC, DOCX or TXT.");
-    return;
-  }
+  const ext = file.name.split('.').pop().toLowerCase();
+  const extUpper = ext.toUpperCase();
+  const sizeMB = (file.size / 1_048_576).toFixed(1);
+  const iconClass =
+    ext === 'pdf' ? 'pdf'
+      : ext === 'ppt' || ext === 'pptx' ? 'ppt'
+        : ext === 'doc' || ext === 'docx' ? 'doc'
+          : 'default';
 
-  currentFile = file;
+  const iconEl = document.getElementById('fileIcon');
+  iconEl.textContent = extUpper;
+  iconEl.className = `file-icon-box ${iconClass}`;
 
-  // show file preview card
-  document.getElementById("fileName").textContent  = file.name;
-  document.getElementById("fileSize").textContent  = (file.size / (1024*1024)).toFixed(2) + " MB";
-  document.getElementById("fileIcon").textContent  = ext.toUpperCase();
-  document.getElementById("filePreview").classList.remove("hidden");
-  document.getElementById("genArea").classList.remove("hidden");
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = `${sizeMB} MB`;
+  document.getElementById('filePreview').classList.remove('hidden');
+  document.getElementById('genArea').classList.remove('hidden');
 }
 
 function removeFile() {
-  currentFile = null;
-  document.getElementById("filePreview").classList.add("hidden");
-  document.getElementById("genArea").classList.add("hidden");
-  document.getElementById("fileInput").value = "";
+  App.selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').classList.add('hidden');
+  document.getElementById('genArea').classList.add('hidden');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  START PROCESSING — uploads file to Python, gets first question
-// ═══════════════════════════════════════════════════════════
-async function startProcessing() {
-  if (!currentFile) return;
+function setState(id) {
+  ['stateUpload', 'stateProcessing', 'stateResults'].forEach((stateId) => {
+    document.getElementById(stateId).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
 
-  // switch to processing state
-  showState("stateProcessing");
-  animateProcessingSteps();
+function resetProcessingAnimation() {
+  App.procTimers.forEach((timer) => clearTimeout(timer));
+  App.procTimers = [];
+}
 
-  try {
-    // ── send file to Python backend ──────────────────────
-    const formData = new FormData();
-    formData.append("file", currentFile);
+function runProcessingAnimation() {
+  const stepIds = ['procStep1', 'procStep2', 'procStep3', 'procStep4'];
+  const delays = [0, 1100, 2200, 3300];
 
-    const response = await fetch(`${API_BASE}/setup`, {
-      method: "POST",
-      body:   formData,
-    });
+  stepIds.forEach((id, index) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    el.style.opacity = index === 0 ? '1' : '0.4';
+    el.querySelector('.step-icon').innerHTML = `<div class="${index === 0 ? 'spin-ring' : 'pending-dot'}"></div>`;
+  });
 
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
-    }
+  stepIds.forEach((id, index) => {
+    const activate = setTimeout(() => {
+      const el = document.getElementById(id);
+      el.classList.add('active');
+      el.style.opacity = '1';
+      el.querySelector('.step-icon').innerHTML = '<div class="spin-ring"></div>';
+    }, delays[index]);
 
-    const data = await response.json();
+    const complete = setTimeout(() => {
+      const el = document.getElementById(id);
+      el.classList.remove('active');
+      el.querySelector('.step-icon').innerHTML =
+        `<div class="check-circle">
+           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+         </div>`;
+    }, delays[index] + 900);
 
-    // ── store session state ──────────────────────────────
-    sessionActive   = true;
-    currentQuestion = data.question;
+    App.procTimers.push(activate, complete);
+  });
+}
 
-    // ── populate the results view ────────────────────────
-    populateResults(data);
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
-    // switch to results state
-    showState("stateResults");
-    showNotif("Questions generated!");
+async function apiFetch(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
 
-  } catch (err) {
-    console.error("Setup error:", err);
-    showState("stateUpload");
-    showNotif("Error connecting to Python server. Is Flask running?");
+  const data = await response.json();
+  if (!response.ok || !data.ok) {
+    throw new Error(data.error || 'Request failed.');
   }
+
+  return data;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  POPULATE RESULTS VIEW
-// ═══════════════════════════════════════════════════════════
-function populateResults(data) {
-  // ── left panel: lecture info ─────────────────────────
-  document.getElementById("docTitle").textContent     = currentFile.name;
-  document.getElementById("docBadge").textContent     = currentFile.name.split(".").pop().toUpperCase();
-  document.getElementById("metaWords").textContent    = data.word_count   || "—";
-  document.getElementById("metaPages").textContent    = data.slide_count  || "—";
-  document.getElementById("metaDiff").textContent     = "Adaptive";
-
-  // show concept list in topics area
-  const graph = data.concept_graph || [];
-  const topicsList = document.getElementById("topicsList");
-  topicsList.innerHTML = graph.map(c =>
-    `<div class="topic-item">
-       <span class="topic-dot"></span>
-       <span>${c.concept}</span>
-       <span class="topic-diff">${"★".repeat(c.difficulty)}${"☆".repeat(5 - c.difficulty)}</span>
-     </div>`
-  ).join("");
-
-  document.getElementById("metaQCount").textContent  = graph.length;
-
-  // ── right panel: first question ──────────────────────
-  renderQuestion(data.question, data.current_concept, data.agent_thinking);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  RENDER CURRENT QUESTION + AGENT THINKING
-// ═══════════════════════════════════════════════════════════
-function renderQuestion(question, concept, thinkingLog) {
-  if (!question) return;
-
-  currentQuestion  = question;
-  questionStartTime = Date.now();  // start timer
-
-  const qList = document.getElementById("qList");
-  document.getElementById("qCountBadge").textContent =
-    `Concept: ${concept || "—"}`;
-
-  // ── agent thinking section ───────────────────────────
-  const thinkingHTML = thinkingLog && thinkingLog.length
-    ? `<div class="thinking-log">
-        <div class="thinking-title">🧠 Agent Thinking</div>
-        ${thinkingLog.map(t =>
-          `<div class="thinking-entry">
-             <span class="thinking-agent">${t.agent}</span>
-             <span class="thinking-msg">${t.message}</span>
-           </div>`
-        ).join("")}
-       </div>`
-    : "";
-
-  // ── the question card ────────────────────────────────
-  qList.innerHTML = `
-    ${thinkingHTML}
-
-    <div class="q-card active" id="activeQuestion">
-      <div class="q-header">
-        <div class="q-num">Current Question</div>
-        <div class="q-diff-badge">${question.difficulty || "medium"}</div>
-      </div>
-      <div class="q-text">${question.question}</div>
-
-      <div class="q-timer" id="qTimer">⏱ 0s / ${question.expected_time_seconds}s</div>
-
-      <textarea
-        id="studentAnswer"
-        class="answer-input"
-        placeholder="Type your answer here..."
-        rows="4"
-      ></textarea>
-
-      <div class="q-actions">
-        <button class="act-btn primary" onclick="submitAnswer()">
-          Submit Answer
-        </button>
-        <button class="act-btn" onclick="requestHint()">
-          💡 Hint
-        </button>
-      </div>
-
-      <div id="feedbackArea" class="feedback-area hidden"></div>
-    </div>
-
-    <div class="q-card" id="historyLog">
-      <div class="q-header">
-        <div class="q-num">Progress</div>
-      </div>
-      <div id="progressBar" class="progress-wrap">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-      </div>
-      <div id="historyEntries"></div>
-    </div>
-  `;
-
-  // start the timer
-  startTimer(question.expected_time_seconds);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  TIMER
-// ═══════════════════════════════════════════════════════════
-let timerInterval = null;
-
-function startTimer(expectedSeconds) {
-  if (timerInterval) clearInterval(timerInterval);
-  let elapsed = 0;
-
-  timerInterval = setInterval(() => {
-    elapsed++;
-    const el = document.getElementById("qTimer");
-    if (!el) { clearInterval(timerInterval); return; }
-    el.textContent = `⏱ ${elapsed}s / ${expectedSeconds}s`;
-
-    // auto-show hint reminder if student is taking too long
-    if (elapsed === Math.round(expectedSeconds * 1.5)) {
-      el.style.color = "var(--color-text-warning)";
-      el.textContent += "  — take your time or click Hint";
-    }
-  }, 1000);
-}
-
-function getElapsedSeconds() {
-  if (!questionStartTime) return 30;
-  return Math.round((Date.now() - questionStartTime) / 1000);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  SUBMIT ANSWER — sends to Python, renders response
-// ═══════════════════════════════════════════════════════════
-async function submitAnswer() {
-  const answerText = document.getElementById("studentAnswer")?.value?.trim();
-  if (!answerText) {
-    showNotif("Please write an answer first.");
+async function startProcessing() {
+  if (!App.selectedFile) {
+    showNotif('Choose a lecture file first.');
     return;
   }
 
-  clearInterval(timerInterval);
-  const timeTaken = getElapsedSeconds();
-
-  // disable button while waiting
-  const btn = document.querySelector("#activeQuestion .act-btn.primary");
-  if (btn) { btn.disabled = true; btn.textContent = "Thinking..."; }
+  const button = document.getElementById('genBtn');
+  button.disabled = true;
+  setState('stateProcessing');
+  resetProcessingAnimation();
+  runProcessingAnimation();
 
   try {
-    const response = await fetch(`${API_BASE}/answer`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({
-        answer:     answerText,
-        time_taken: timeTaken,
+    const base64 = await fileToBase64(App.selectedFile);
+    const data = await apiFetch('/learn/api/session/setup', {
+      method: 'POST',
+      body: JSON.stringify({
+        fileName: App.selectedFile.name,
+        fileData: base64,
       }),
     });
 
-    const data = await response.json();
-
-    // ── show feedback in the card ────────────────────────
-    renderFeedback(data);
-
-    // ── update history log ───────────────────────────────
-    addToHistory(answerText, data);
-
-    // ── update agent thinking ────────────────────────────
-    if (data.agent_thinking) {
-      const thinkEl = document.querySelector(".thinking-log");
-      if (thinkEl) {
-        thinkEl.innerHTML = `
-          <div class="thinking-title">🧠 Agent Thinking</div>
-          ${data.agent_thinking.map(t =>
-            `<div class="thinking-entry">
-               <span class="thinking-agent">${t.agent}</span>
-               <span class="thinking-msg">${t.message}</span>
-             </div>`
-          ).join("")}`;
-      }
-    }
-
-    // ── if next question available, show it after a delay ─
-    if (data.action !== "SESSION_COMPLETE" &&
-        data.action !== "SHOW_HINT" &&
-        data.action !== "SHOW_EXPLANATION" &&
-        data.action !== "RECOMMEND_VIDEO") {
-
-      setTimeout(() => {
-        renderQuestion(data.next_question, data.concept, data.agent_thinking);
-      }, 3000);
-    }
-
-    if (data.action === "SESSION_COMPLETE") {
-      setTimeout(() => showSessionComplete(data), 2000);
-    }
-
-  } catch (err) {
-    console.error("Answer error:", err);
-    showNotif("Error submitting answer. Check Python server.");
-    if (btn) { btn.disabled = false; btn.textContent = "Submit Answer"; }
+    applySession(data.session, data.decision);
+    setState('stateResults');
+    showNotif('Adaptive session is ready.');
+  } catch (error) {
+    setState('stateUpload');
+    showNotif(error.message || 'Could not start the session.');
+  } finally {
+    button.disabled = false;
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  RENDER FEEDBACK (hint / explanation / videos)
-// ═══════════════════════════════════════════════════════════
-function renderFeedback(data) {
-  const area = document.getElementById("feedbackArea");
-  if (!area) return;
+function applySession(session, decision) {
+  App.session = session;
+  App.questionStartedAt = Date.now();
 
-  area.classList.remove("hidden");
-  area.innerHTML = "";
+  const question = session.current_question || {};
+  const conceptState = session.current_concept_state || {};
+  const progress = session.progress || {};
 
-  // ── result badge ─────────────────────────────────────
-  const isCorrect = data.action === "INCREASE_DIFFICULTY" ||
-                    data.action === "NEXT_CONCEPT"         ||
-                    data.action === "KEEP_LEVEL";
+  document.getElementById('docBadge').textContent = fileExtensionLabel(session.lecture_title);
+  document.getElementById('docTitle').textContent = session.lecture_title || 'Lecture session';
+  document.getElementById('sessionSummary').textContent =
+    session.current_summary || 'The parser extracted concepts and the tutor is ready to adapt question difficulty.';
 
-  const badge = document.createElement("div");
-  badge.className = `result-badge ${isCorrect ? "correct" : "incorrect"}`;
-  badge.textContent = isCorrect ? "✓ Correct" : "✗ Needs review";
-  area.appendChild(badge);
+  document.getElementById('metaConcepts').textContent = progress.concept_count ?? '-';
+  document.getElementById('metaMastered').textContent = `${progress.mastered_count ?? 0}`;
+  document.getElementById('metaAnswered').textContent = session.total_questions ?? 0;
+  document.getElementById('metaAccuracy').textContent = `${Math.round((progress.accuracy || 0) * 100)}%`;
 
-  // ── agent message ────────────────────────────────────
-  if (data.message) {
-    const msg = document.createElement("div");
-    msg.className = "agent-message";
-    msg.textContent = data.message;
-    area.appendChild(msg);
-  }
+  document.getElementById('currentConceptName').textContent = session.current_concept || '-';
+  document.getElementById('bktValue').textContent = formatNumber(conceptState.bkt_p_learned);
+  document.getElementById('thetaValue').textContent = formatSigned(conceptState.irt_theta);
+  document.getElementById('difficultyValue').textContent = formatSigned(question.b);
 
-  // ── hint ─────────────────────────────────────────────
-  if (data.hint) {
-    const h = document.createElement("div");
-    h.className = "feedback-block hint-block";
-    h.innerHTML = `<div class="fb-label">💡 Hint</div><div class="fb-text">${data.hint}</div>`;
-    area.appendChild(h);
-  }
+  document.getElementById('questionConceptPill').textContent = session.current_concept || 'Concept';
+  document.getElementById('questionDifficultyPill').textContent = question.difficulty || 'Adaptive';
+  document.getElementById('questionPrompt').textContent = question.question || 'No question available.';
+  document.getElementById('questionContext').textContent =
+    question.expected_answer || session.current_summary || 'The tutor will place the concept summary here.';
 
-  // ── explanation ──────────────────────────────────────
-  if (data.explanation) {
-    const e = document.createElement("div");
-    e.className = "feedback-block explanation-block";
-    e.innerHTML = `<div class="fb-label">📖 Explanation</div><div class="fb-text">${data.explanation}</div>`;
-    area.appendChild(e);
-  }
+  document.getElementById('qCountBadge').textContent =
+    `Expected ${question.expected_time_seconds || 0}s`;
 
-  // ── YouTube videos ───────────────────────────────────
-  if (data.videos && data.videos.length > 0) {
-    const v = document.createElement("div");
-    v.className = "feedback-block video-block";
-    v.innerHTML = `
-      <div class="fb-label">🎬 Recommended Videos</div>
-      ${data.videos.map(vid => `
-        <a href="${vid.url}" target="_blank" class="video-link">
-          ${vid.thumbnail
-            ? `<img src="${vid.thumbnail}" class="video-thumb" alt="">`
-            : ""}
-          <span>${vid.title}</span>
-        </a>
-      `).join("")}
-    `;
-    area.appendChild(v);
-  }
+  const decisionMessage = decision?.message_to_student
+    || session.llm_decision?.message_to_student
+    || 'Answer the question to let the tutor adapt.';
+  document.getElementById('feedbackMessage').textContent = decisionMessage;
+
+  document.getElementById('resultsTitle').textContent =
+    session.current_concept ? `Working on ${session.current_concept}` : 'Adaptive session ready';
+  document.getElementById('resultsSubtitle').textContent =
+    `Current question difficulty is ${question.difficulty || 'adaptive'} and the next step depends on the student's answer.`;
+
+  renderConceptGraph(session.concept_graph || [], session.current_concept, session.student_model || {});
+  renderThinking(session.agent_thinking || []);
+  renderFeedback(session);
+  document.getElementById('answerInput').value = '';
+  updateTimerHint(question.expected_time_seconds);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  REQUEST HINT (before submitting)
-// ═══════════════════════════════════════════════════════════
-async function requestHint() {
-  const timeTaken = getElapsedSeconds();
+function renderConceptGraph(graph, currentConcept, studentModel) {
+  const container = document.getElementById('conceptList');
+  container.innerHTML = '';
 
-  // send a placeholder answer just to trigger SHOW_HINT
-  try {
-    const response = await fetch(`${API_BASE}/hint`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ time_taken: timeTaken }),
-    });
-    const data = await response.json();
-    if (data.hint) {
-      const area = document.getElementById("feedbackArea");
-      area.classList.remove("hidden");
-      area.innerHTML = `
-        <div class="feedback-block hint-block">
-          <div class="fb-label">💡 Hint</div>
-          <div class="fb-text">${data.hint}</div>
-        </div>`;
-    }
-  } catch (err) {
-    showNotif("Could not get hint right now.");
+  if (!graph.length) {
+    container.innerHTML = '<div class="empty-note">No concept graph yet.</div>';
+    return;
   }
-}
 
-// ═══════════════════════════════════════════════════════════
-//  HISTORY LOG
-// ═══════════════════════════════════════════════════════════
-let historyCount   = 0;
-let correctCount   = 0;
+  graph.forEach((concept) => {
+    const item = document.createElement('div');
+    const state = studentModel[concept.concept] || {};
+    item.className = 'concept-item';
+    if (concept.concept === currentConcept) item.classList.add('active');
+    if (state.mastered) item.classList.add('mastered');
 
-function addToHistory(answer, data) {
-  historyCount++;
-  const wasCorrect = !["SHOW_EXPLANATION","RECOMMEND_VIDEO","DECREASE_DIFFICULTY"]
-                      .includes(data.action);
-  if (wasCorrect) correctCount++;
+    const deps = (concept.depends_on || []).length
+      ? `Depends on: ${concept.depends_on.join(', ')}`
+      : 'No prerequisites';
 
-  // update progress bar
-  const pct = Math.round((correctCount / historyCount) * 100);
-  const fill = document.getElementById("progressFill");
-  if (fill) fill.style.width = pct + "%";
-
-  // add entry
-  const entries = document.getElementById("historyEntries");
-  if (!entries) return;
-
-  const entry = document.createElement("div");
-  entry.className = `history-entry ${wasCorrect ? "correct" : "incorrect"}`;
-  entry.innerHTML = `
-    <span class="h-num">#${historyCount}</span>
-    <span class="h-answer">${answer.substring(0, 60)}${answer.length > 60 ? "…" : ""}</span>
-    <span class="h-result">${wasCorrect ? "✓" : "✗"}</span>
-  `;
-  entries.prepend(entry);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  SESSION COMPLETE
-// ═══════════════════════════════════════════════════════════
-function showSessionComplete(data) {
-  const qList = document.getElementById("qList");
-  qList.innerHTML = `
-    <div class="q-card complete-card">
-      <div class="complete-icon">🎉</div>
-      <div class="complete-title">All Concepts Mastered!</div>
-      <div class="complete-stats">
-        <div class="stat-item">
-          <div class="stat-val">${historyCount}</div>
-          <div class="stat-label">Questions answered</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-val">${correctCount}</div>
-          <div class="stat-label">Correct answers</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-val">${Math.round((correctCount/historyCount)*100)}%</div>
-          <div class="stat-label">Accuracy</div>
-        </div>
+    item.innerHTML = `
+      <div class="concept-item-head">
+        <strong>${escapeHtml(concept.concept)}</strong>
+        <span class="concept-difficulty">D${concept.difficulty || '-'}</span>
       </div>
-    </div>
-  `;
+      <div class="concept-item-body">${escapeHtml(concept.summary || '')}</div>
+      <div class="concept-item-foot">${escapeHtml(deps)}</div>
+    `;
+    container.appendChild(item);
+  });
 }
 
-// ═══════════════════════════════════════════════════════════
-//  CHAT (ask about lecture)
-// ═══════════════════════════════════════════════════════════
-function onChatKey(e) {
-  if (e.key === "Enter") sendChat();
+function renderThinking(entries) {
+  const container = document.getElementById('thinkingList');
+  container.innerHTML = '';
+
+  if (!entries.length) {
+    container.innerHTML = '<div class="empty-note">Agent reasoning will appear here after setup.</div>';
+    return;
+  }
+
+  entries.forEach((entry) => {
+    const item = document.createElement('div');
+    item.className = 'thinking-item';
+    item.innerHTML = `
+      <div class="thinking-head">
+        <strong>${escapeHtml(entry.agent || 'Agent')}</strong>
+        <span>${escapeHtml(entry.timestamp || '')}</span>
+      </div>
+      <div class="thinking-body">${escapeHtml(entry.message || '')}</div>
+    `;
+    container.appendChild(item);
+  });
 }
 
-async function sendChat() {
-  const input = document.getElementById("chatInput");
-  const text  = input.value.trim();
-  if (!text) return;
-  input.value = "";
+function renderFeedback(session) {
+  const hintBlock = document.getElementById('hintBlock');
+  const explanationBlock = document.getElementById('explanationBlock');
+  const videoList = document.getElementById('videoList');
 
-  try {
-    const response = await fetch(`${API_BASE}/chat`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ message: text }),
-    });
-    const data = await response.json();
-    showNotif("Chat: " + (data.reply || "").substring(0, 60) + "…");
-  } catch {
-    showNotif("Chat unavailable right now.");
+  if (session.hint) {
+    hintBlock.classList.remove('hidden');
+    hintBlock.innerHTML = `<div class="feedback-label">Hint</div>${escapeHtml(session.hint)}`;
+  } else {
+    hintBlock.classList.add('hidden');
+    hintBlock.innerHTML = '';
+  }
+
+  if (session.explanation) {
+    explanationBlock.classList.remove('hidden');
+    explanationBlock.innerHTML = `<div class="feedback-label">Explanation</div>${escapeHtml(session.explanation)}`;
+  } else {
+    explanationBlock.classList.add('hidden');
+    explanationBlock.innerHTML = '';
+  }
+
+  if ((session.videos || []).length) {
+    videoList.classList.remove('hidden');
+    videoList.innerHTML = session.videos.map((video) => `
+      <a class="video-card" href="${escapeAttribute(video.url || '#')}" target="_blank" rel="noreferrer">
+        <strong>${escapeHtml(video.title || 'Video')}</strong>
+        <span>${escapeHtml(video.channel || 'Open recommendation')}</span>
+      </a>
+    `).join('');
+  } else {
+    videoList.classList.add('hidden');
+    videoList.innerHTML = '';
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  TOOLBAR BUTTONS
-// ═══════════════════════════════════════════════════════════
-function regenerate() {
-  if (!sessionActive) return;
-  showNotif("Regenerating questions…");
-  startProcessing();
+async function submitAnswer() {
+  if (!App.session?.current_question) {
+    showNotif('Start a session first.');
+    return;
+  }
+
+  const answer = document.getElementById('answerInput').value.trim();
+  if (!answer) {
+    showNotif('Write an answer before submitting.');
+    return;
+  }
+
+  const button = document.getElementById('submitAnswerBtn');
+  button.disabled = true;
+
+  try {
+    const elapsedSeconds = Math.max(1, Math.round((Date.now() - (App.questionStartedAt || Date.now())) / 1000));
+    const data = await apiFetch('/learn/api/session/answer', {
+      method: 'POST',
+      body: JSON.stringify({
+        answer,
+        timeTaken: elapsedSeconds,
+      }),
+    });
+
+    applySession(data.session, data.decision);
+    showNotif('Answer processed by the tutor.');
+  } catch (error) {
+    showNotif(error.message || 'Could not submit answer.');
+  } finally {
+    button.disabled = false;
+  }
 }
 
-function makeHarder() {
-  showNotif("Increasing difficulty for next question…");
-  fetch(`${API_BASE}/harder`, { method: "POST" })
-    .then(r => r.json())
-    .then(data => {
-      if (data.question) renderQuestion(data.question, data.concept, data.agent_thinking);
-    })
-    .catch(() => showNotif("Could not change difficulty."));
+async function refreshSession() {
+  try {
+    const data = await apiFetch('/learn/api/session/state');
+    applySession(data.session);
+    setState('stateResults');
+    showNotif('Session state refreshed.');
+  } catch (error) {
+    showNotif(error.message || 'Could not refresh session.');
+  }
 }
 
-function revealAll() {
-  document.querySelectorAll(".answer-reveal").forEach(el => {
-    el.classList.remove("hidden");
-  });
-  showNotif("Answers revealed!");
+async function resetApp() {
+  try {
+    await apiFetch('/learn/api/session/reset', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  } catch (error) {
+    // Keep the UI reset even if the backend reset fails.
+  }
+
+  App.procTimers.forEach((timer) => clearTimeout(timer));
+  App.procTimers = [];
+  App.selectedFile = null;
+  App.session = null;
+  App.questionStartedAt = null;
+
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').classList.add('hidden');
+  document.getElementById('genArea').classList.add('hidden');
+  document.getElementById('answerInput').value = '';
+  setState('stateUpload');
+  showNotif('Ready for another lecture.');
 }
 
-function expandAll() {
-  document.querySelectorAll(".q-card").forEach(el => {
-    el.classList.add("expanded");
-  });
+function updateTimerHint(expectedSeconds) {
+  const hint = expectedSeconds
+    ? `Expected answering time for this question is about ${expectedSeconds} seconds.`
+    : 'Timer starts when the question is shown.';
+  document.getElementById('timerHint').textContent = hint;
 }
 
-function exportPDF() {
-  showNotif("Export feature coming soon!");
+function fileExtensionLabel(fileName) {
+  if (!fileName || !fileName.includes('.')) return 'FILE';
+  return fileName.split('.').pop().toUpperCase();
 }
 
-function resetApp() {
-  sessionActive    = false;
-  currentFile      = null;
-  currentQuestion  = null;
-  historyCount     = 0;
-  correctCount     = 0;
-  clearInterval(timerInterval);
-
-  document.getElementById("fileInput").value = "";
-  document.getElementById("filePreview").classList.add("hidden");
-  document.getElementById("genArea").classList.add("hidden");
-  document.getElementById("qList").innerHTML = "";
-
-  showState("stateUpload");
-
-  // tell Python to reset session
-  fetch(`${API_BASE}/reset`, { method: "POST" }).catch(() => {});
+function formatNumber(value) {
+  return Number.isFinite(Number(value)) ? Number(value).toFixed(3) : '-';
 }
 
-// ═══════════════════════════════════════════════════════════
-//  STATE SWITCHER
-// ═══════════════════════════════════════════════════════════
-function showState(id) {
-  document.querySelectorAll(".state").forEach(el => el.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+function formatSigned(value) {
+  return Number.isFinite(Number(value)) ? Number(value).toFixed(2) : '-';
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PROCESSING ANIMATION
-// ═══════════════════════════════════════════════════════════
-function animateProcessingSteps() {
-  const steps = document.querySelectorAll(".proc-step");
-  let i = 0;
-
-  const advance = () => {
-    if (i > 0 && steps[i-1]) {
-      steps[i-1].classList.remove("active");
-      steps[i-1].classList.add("done");
-      steps[i-1].querySelector(".spin-ring, .pending-dot").outerHTML =
-        '<svg class="step-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-    }
-    if (i < steps.length) {
-      steps[i].classList.add("active");
-      const dot = steps[i].querySelector(".pending-dot");
-      if (dot) dot.className = "spin-ring";
-      i++;
-      setTimeout(advance, 900);
-    }
-  };
-  advance();
+function showNotif(msg) {
+  const notif = document.getElementById('notif');
+  document.getElementById('notifText').textContent = msg;
+  notif.classList.remove('hide');
+  clearTimeout(App.notifTimer);
+  App.notifTimer = setTimeout(() => notif.classList.add('hide'), 3200);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  NOTIFICATION TOAST
-// ═══════════════════════════════════════════════════════════
-let notifTimer = null;
-function showNotif(text) {
-  const el = document.getElementById("notif");
-  document.getElementById("notifText").textContent = text;
-  el.classList.remove("hide");
-  clearTimeout(notifTimer);
-  notifTimer = setTimeout(() => el.classList.add("hide"), 3500);
+function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
+
+function escapeAttribute(str) {
+  return escapeHtml(str);
+}
+
+window.addEventListener('load', async () => {
+  try {
+    const data = await apiFetch('/learn/api/session/state');
+    applySession(data.session);
+    setState('stateResults');
+  } catch (error) {
+    // No active session is a normal initial state.
+  }
+});
