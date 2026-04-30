@@ -10,6 +10,7 @@ from main import STUDENT_STATE_FILE, build_system
 
 
 def _serialize_session(bb):
+    """Serialize the current session state for the frontend."""
     graph = bb.read("concept_graph") or []
     model = bb.read("student_model") or {}
     current_concept = bb.read("current_concept")
@@ -38,10 +39,13 @@ def _serialize_session(bb):
         "concept_graph": graph,
         "student_model": model,
         "hint": bb.read("hint"),
+        "hint_available": bb.read("hint_available"),
         "explanation": bb.read("explanation"),
         "videos": bb.read("videos") or [],
         "agent_thinking": bb.read("agent_thinking") or [],
         "llm_decision": bb.read("llm_decision"),
+        "last_answer_correct": bb.read("last_answer_correct"),
+        "last_answer_text": bb.read("last_answer_text"),
         "total_questions": total_questions,
         "total_correct": total_correct,
         "progress": {
@@ -74,14 +78,46 @@ def _handle_request(payload):
     if action == "answer":
         answer_text = payload.get("answer", "")
         time_taken = float(payload.get("time_taken", 30))
-        orchestrator, bb = build_system(resume=True, include_parser=False)
+        hint_used = bool(payload.get("hint_used", False))
+        
+        # Build system without parser (resume session)
+        orchestrator, bb = build_system(resume=True)
+        
         if not bb.read("current_question"):
             raise RuntimeError("No active session found. Start with setup first.")
-        decision = orchestrator.process_answer(answer_text, time_taken)
+        
+        # Process answer with hint_used parameter
+        decision = orchestrator.process_answer(answer_text, time_taken, hint_used)
+        
         return {
             "ok": True,
             "message": "Answer processed.",
             "decision": decision,
+            "session": _serialize_session(bb),
+        }
+
+    if action == "get_hint":
+        # Request a hint without submitting answer
+        bb = Blackboard(save_path=STUDENT_STATE_FILE)
+        if not bb.load():
+            return {"ok": False, "error": "No active session found."}
+        
+        hint_available = bb.read("hint_available")
+        if not hint_available:
+            return {"ok": False, "error": "Hint already used for this question."}
+        
+        # Generate hint using FeedbackAgent
+        from question_feedback_agents import FeedbackAgent
+        feedback_agent = FeedbackAgent(bb)
+        
+        # Set up decision for hint generation
+        bb.write("llm_decision", {"action": "SHOW_HINT"})
+        feedback_agent.run()
+        bb.save()
+        
+        return {
+            "ok": True,
+            "message": "Hint generated.",
             "session": _serialize_session(bb),
         }
 

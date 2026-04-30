@@ -1,0 +1,329 @@
+/* ═══════════════════════════════════════════════════════════
+   ADDITIONAL STYLES FOR UPDATED LEARNING.JS
+   Add these to your existing learning.css file
+   ═══════════════════════════════════════════════════════════ */
+
+/* MCQ Options Styling */
+.mcq-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mcq-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mcq-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.mcq-option input[type="radio"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+}
+
+.mcq-option .option-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.mcq-option .option-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.mcq-option:has(input:checked) {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #6366f1;
+}
+
+.mcq-option:has(input:checked) .option-letter {
+  background: #6366f1;
+  color: white;
+}
+
+/* Answer Result Feedback */
+.answer-result {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.answer-result.feedback-correct {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.answer-result.feedback-wrong {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.answer-result .result-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.feedback-correct .result-icon {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.feedback-wrong .result-icon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.answer-result .result-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+  stroke: currentColor;
+  fill: none;
+}
+
+.answer-result .result-content {
+  flex: 1;
+}
+
+.answer-result .result-badge {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.feedback-correct .result-badge {
+  color: #22c55e;
+}
+
+.feedback-wrong .result-badge {
+  color: #ef4444;
+}
+
+.answer-result .result-message {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.feedback-waiting {
+  padding: 12px 16px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Hint Button */
+.hint-btn {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.hint-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.hint-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* End Session Button */
+.act-btn.danger {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.act-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Feedback Blocks with Icons */
+.feedback-block {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(99, 102, 241, 0.6);
+  border-radius: 6px;
+}
+
+.feedback-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #818cf8;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.feedback-label svg {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.feedback-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+#hintBlock {
+  border-left-color: rgba(245, 158, 11, 0.6);
+}
+
+#hintBlock .feedback-label {
+  color: #fbbf24;
+}
+
+#explanationBlock {
+  border-left-color: rgba(34, 197, 94, 0.6);
+}
+
+#explanationBlock .feedback-label {
+  color: #4ade80;
+}
+
+/* Video List */
+.video-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-top: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.video-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateX(4px);
+}
+
+.video-card strong {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.video-card span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Light Mode Adjustments */
+body.light-mode .mcq-option {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .mcq-option:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .mcq-option .option-text {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+body.light-mode .answer-result.feedback-correct {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+body.light-mode .answer-result.feedback-wrong {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+body.light-mode .answer-result .result-message {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+body.light-mode .feedback-waiting {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.15);
+  color: rgba(0, 0, 0, 0.75);
+}
+
+body.light-mode .feedback-block {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-mode .feedback-content {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+body.light-mode .video-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .video-card:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .video-card strong {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-mode .video-card span {
+  color: rgba(0, 0, 0, 0.5);
+}

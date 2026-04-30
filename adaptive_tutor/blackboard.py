@@ -4,6 +4,8 @@ blackboard.py
 The shared environment all agents read from and write to.
 Agents NEVER talk to each other directly — only through here.
 This is the Blackboard Architecture from MAS Lecture 3.
+
+UPDATED: Added fields for hint system and question deduplication
 """
 
 import json
@@ -35,10 +37,16 @@ class Blackboard:
 
             # ── written by: QuestionAgent ────────────────
             "current_question":     None,   # full question dict
+            "asked_questions":      [],     # list of question hashes (deduplication)
+            
+            # ── hint system ──────────────────────────────
+            "hint_available":       True,   # can student request hint?
+            "hint_used_current_question": False,  # did they use hint this time?
 
             # ── written by: OrchestratorAgent ────────────
             "llm_decision":         None,   # action + reasoning
             "agent_thinking":       [],     # log shown in UI
+            "next_b":               None,   # next difficulty selected by IRT
 
             # ── written by: FeedbackAgent ────────────────
             "hint":                 None,

@@ -6,6 +6,7 @@ const App = {
   procTimers: [],
   notifTimer: null,
   session: null,
+  hintUsed: false,
 };
 
 function toggleTheme() {
@@ -181,6 +182,7 @@ async function startProcessing() {
 function applySession(session, decision) {
   App.session = session;
   App.questionStartedAt = Date.now();
+  App.hintUsed = false;
 
   const question = session.current_question || {};
   const conceptState = session.current_concept_state || {};
@@ -203,31 +205,118 @@ function applySession(session, decision) {
 
   document.getElementById('questionConceptPill').textContent = session.current_concept || 'Concept';
   document.getElementById('questionDifficultyPill').textContent = question.difficulty || 'Adaptive';
-  document.getElementById('questionPrompt').textContent = question.question || 'No question available.';
-  document.getElementById('questionContext').textContent =
-    question.expected_answer || session.current_summary || 'The tutor will place the concept summary here.';
+  
+  // Render question based on type
+  renderQuestion(question);
 
   document.getElementById('qCountBadge').textContent =
     `Expected ${question.expected_time_seconds || 0}s`;
 
-  const decisionMessage = decision?.message_to_student
-    || session.llm_decision?.message_to_student
-    || 'Answer the question to let the tutor adapt.';
-  document.getElementById('feedbackMessage').textContent = decisionMessage;
+  // Show feedback message with correct/wrong indicator
+  renderFeedbackMessage(session, decision);
 
   document.getElementById('resultsTitle').textContent =
     session.current_concept ? `Working on ${session.current_concept}` : 'Adaptive session ready';
   document.getElementById('resultsSubtitle').textContent =
     `Current question difficulty is ${question.difficulty || 'adaptive'} and the next step depends on the student's answer.`;
 
-  renderConceptGraph(session.concept_graph || [], session.current_concept, session.student_model || {});
+  // HIDE concept graph as requested
+  // renderConceptGraph(session.concept_graph || [], session.current_concept, session.student_model || {});
+  hideConceptGraph();
+  
   renderThinking(session.agent_thinking || []);
   renderFeedback(session);
-  document.getElementById('answerInput').value = '';
+  
+  // Reset answer input for next question
+  const answerArea = document.getElementById('answerInput');
+  if (answerArea) {
+    answerArea.value = '';
+  }
+  
   updateTimerHint(question.expected_time_seconds);
+  updateHintButton(session.hint_available);
+}
+
+function renderQuestion(question) {
+  const questionType = question.type || 'essay';
+  const promptDiv = document.getElementById('questionPrompt');
+  const contextDiv = document.getElementById('questionContext');
+  const answerArea = document.getElementById('answerInput');
+  
+  promptDiv.textContent = question.question || 'Upload a lecture to begin.';
+  
+  if (questionType === 'mcq') {
+    // Render MCQ options
+    const options = question.options || [];
+    contextDiv.innerHTML = `
+      <div class="mcq-options" id="mcqOptions">
+        ${options.map((opt, idx) => `
+          <label class="mcq-option">
+            <input type="radio" name="mcq_answer" value="${String.fromCharCode(65 + idx)}">
+            <span class="option-letter">${String.fromCharCode(65 + idx)}</span>
+            <span class="option-text">${escapeHtml(opt)}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+    // Hide textarea for MCQ
+    if (answerArea) {
+      answerArea.style.display = 'none';
+    }
+  } else {
+    // Essay question
+    contextDiv.textContent = question.expected_answer || question.key_points?.join(', ') || 'Answer the question above.';
+    
+    // Show textarea for essay
+    if (answerArea) {
+      answerArea.style.display = 'block';
+    }
+  }
+}
+
+function renderFeedbackMessage(session, decision) {
+  const feedbackDiv = document.getElementById('feedbackMessage');
+  
+  // Check if this is a response to an answer
+  if (session.last_answer_correct !== null && session.last_answer_correct !== undefined) {
+    const correct = session.last_answer_correct;
+    const correctClass = correct ? 'feedback-correct' : 'feedback-wrong';
+    const correctIcon = correct 
+      ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
+      : '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    const correctText = correct ? 'CORRECT' : 'WRONG';
+    
+    const decisionMessage = decision?.message_to_student
+      || session.llm_decision?.message_to_student
+      || (correct ? 'Good work! Moving forward.' : 'Let\'s review this concept.');
+    
+    feedbackDiv.innerHTML = `
+      <div class="answer-result ${correctClass}">
+        <div class="result-icon">${correctIcon}</div>
+        <div class="result-content">
+          <div class="result-badge">${correctText}</div>
+          <div class="result-message">${escapeHtml(decisionMessage)}</div>
+        </div>
+      </div>
+    `;
+  } else {
+    // No answer submitted yet
+    const decisionMessage = decision?.message_to_student
+      || session.llm_decision?.message_to_student
+      || 'Answer the question to let the tutor adapt.';
+    feedbackDiv.innerHTML = `<div class="feedback-waiting">${escapeHtml(decisionMessage)}</div>`;
+  }
+}
+
+function hideConceptGraph() {
+  const conceptSection = document.querySelector('.section-block');
+  if (conceptSection && conceptSection.querySelector('.concept-list')) {
+    conceptSection.style.display = 'none';
+  }
 }
 
 function renderConceptGraph(graph, currentConcept, studentModel) {
+  // This function is kept for future use but not called
   const container = document.getElementById('conceptList');
   container.innerHTML = '';
 
@@ -289,7 +378,17 @@ function renderFeedback(session) {
 
   if (session.hint) {
     hintBlock.classList.remove('hidden');
-    hintBlock.innerHTML = `<div class="feedback-label">Hint</div>${escapeHtml(session.hint)}`;
+    hintBlock.innerHTML = `
+      <div class="feedback-label">
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Hint
+      </div>
+      <div class="feedback-content">${escapeHtml(session.hint)}</div>
+    `;
   } else {
     hintBlock.classList.add('hidden');
     hintBlock.innerHTML = '';
@@ -297,7 +396,17 @@ function renderFeedback(session) {
 
   if (session.explanation) {
     explanationBlock.classList.remove('hidden');
-    explanationBlock.innerHTML = `<div class="feedback-label">Explanation</div>${escapeHtml(session.explanation)}`;
+    explanationBlock.innerHTML = `
+      <div class="feedback-label">
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        Explanation
+      </div>
+      <div class="feedback-content">${escapeHtml(session.explanation)}</div>
+    `;
   } else {
     explanationBlock.classList.add('hidden');
     explanationBlock.innerHTML = '';
@@ -305,15 +414,67 @@ function renderFeedback(session) {
 
   if ((session.videos || []).length) {
     videoList.classList.remove('hidden');
-    videoList.innerHTML = session.videos.map((video) => `
-      <a class="video-card" href="${escapeAttribute(video.url || '#')}" target="_blank" rel="noreferrer">
-        <strong>${escapeHtml(video.title || 'Video')}</strong>
-        <span>${escapeHtml(video.channel || 'Open recommendation')}</span>
-      </a>
-    `).join('');
+    videoList.innerHTML = `
+      <div class="feedback-label">
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Recommended Videos
+      </div>
+      ${session.videos.map((video) => `
+        <a class="video-card" href="${escapeAttribute(video.url || '#')}" target="_blank" rel="noreferrer">
+          <strong>${escapeHtml(video.title || 'Video')}</strong>
+          <span>${escapeHtml(video.channel || 'Open recommendation')}</span>
+        </a>
+      `).join('')}
+    `;
   } else {
     videoList.classList.add('hidden');
     videoList.innerHTML = '';
+  }
+}
+
+function updateHintButton(hintAvailable) {
+  // Check if hint button exists, if not create it
+  let hintBtn = document.getElementById('hintBtn');
+  if (!hintBtn) {
+    const answerActions = document.querySelector('.answer-actions');
+    if (answerActions) {
+      hintBtn = document.createElement('button');
+      hintBtn.id = 'hintBtn';
+      hintBtn.className = 'act-btn hint-btn';
+      hintBtn.onclick = requestHint;
+      hintBtn.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Get Hint
+      `;
+      // Insert before submit button
+      answerActions.insertBefore(hintBtn, answerActions.querySelector('.primary'));
+    }
+  }
+  
+  if (hintBtn) {
+    hintBtn.disabled = !hintAvailable;
+    hintBtn.style.display = hintAvailable ? 'flex' : 'none';
+  }
+}
+
+async function requestHint() {
+  try {
+    const data = await apiFetch('/learn/api/session/hint', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+
+    App.hintUsed = true;
+    applySession(data.session);
+    showNotif('Hint provided. This will affect your learning score.');
+  } catch (error) {
+    showNotif(error.message || 'Could not get hint.');
   }
 }
 
@@ -323,10 +484,23 @@ async function submitAnswer() {
     return;
   }
 
-  const answer = document.getElementById('answerInput').value.trim();
-  if (!answer) {
-    showNotif('Write an answer before submitting.');
-    return;
+  const question = App.session.current_question;
+  const questionType = question.type || 'essay';
+  
+  let answer = '';
+  if (questionType === 'mcq') {
+    const selected = document.querySelector('input[name="mcq_answer"]:checked');
+    if (!selected) {
+      showNotif('Please select an answer.');
+      return;
+    }
+    answer = selected.value;
+  } else {
+    answer = document.getElementById('answerInput').value.trim();
+    if (!answer) {
+      showNotif('Write an answer before submitting.');
+      return;
+    }
   }
 
   const button = document.getElementById('submitAnswerBtn');
@@ -339,6 +513,7 @@ async function submitAnswer() {
       body: JSON.stringify({
         answer,
         timeTaken: elapsedSeconds,
+        hintUsed: App.hintUsed,
       }),
     });
 
@@ -363,13 +538,17 @@ async function refreshSession() {
 }
 
 async function resetApp() {
+  if (!confirm('Are you sure you want to end this session and start a new one?')) {
+    return;
+  }
+  
   try {
     await apiFetch('/learn/api/session/reset', {
       method: 'POST',
       body: JSON.stringify({}),
     });
   } catch (error) {
-    // Keep the UI reset even if the backend reset fails.
+    // Continue with UI reset even if backend fails
   }
 
   App.procTimers.forEach((timer) => clearTimeout(timer));
@@ -377,6 +556,7 @@ async function resetApp() {
   App.selectedFile = null;
   App.session = null;
   App.questionStartedAt = null;
+  App.hintUsed = false;
 
   document.getElementById('fileInput').value = '';
   document.getElementById('filePreview').classList.add('hidden');
@@ -384,6 +564,15 @@ async function resetApp() {
   document.getElementById('answerInput').value = '';
   setState('stateUpload');
   showNotif('Ready for another lecture.');
+}
+
+async function endSession() {
+  if (!confirm('Are you sure you want to end this session? Your progress will be saved.')) {
+    return;
+  }
+  
+  // Just redirect to home
+  window.location.href = '/';
 }
 
 function updateTimerHint(expectedSeconds) {
@@ -428,12 +617,30 @@ function escapeAttribute(str) {
   return escapeHtml(str);
 }
 
+// Try to load existing session on page load
 window.addEventListener('load', async () => {
   try {
     const data = await apiFetch('/learn/api/session/state');
     applySession(data.session);
     setState('stateResults');
   } catch (error) {
-    // No active session is a normal initial state.
+    // No active session is normal initial state
+  }
+  
+  // Add end session button if it doesn't exist
+  const resultsActions = document.querySelector('.results-actions');
+  if (resultsActions && !document.getElementById('endSessionBtn')) {
+    const endBtn = document.createElement('button');
+    endBtn.id = 'endSessionBtn';
+    endBtn.className = 'act-btn danger';
+    endBtn.onclick = endSession;
+    endBtn.innerHTML = `
+      <svg viewBox="0 0 24 24">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      End Session
+    `;
+    resultsActions.appendChild(endBtn);
   }
 });
