@@ -7,8 +7,14 @@ Responsible for:
   3. Calling LLM to build ordered concept dependency graph
   4. Writing concept_graph to the blackboard
 
+KEY IMPROVEMENT over original:
+  After building the concept graph, the parser extracts the most relevant
+  paragraph(s) for each concept from the full lecture text and stores them
+  under the blackboard key "concept_contexts" (a dict: concept → text).
+  QuestionAgent and FeedbackAgent consume this for grounded, accurate questions.
+
 Perceives:  file_path  (on blackboard)
-Acts:       concept_graph, current_concept  (written to blackboard)
+Acts:       concept_graph, current_concept, concept_contexts  (written to blackboard)
 """
 
 import json
@@ -26,7 +32,6 @@ class ParserAgent(BaseAgent):
     def __init__(self, blackboard):
         super().__init__("ParserAgent", blackboard)
 
-        # load spaCy English model for NLP
         print("  [ParserAgent] Loading spaCy model...")
         try:
             self.nlp = spacy.load("en_core_web_sm")
@@ -36,7 +41,6 @@ class ParserAgent(BaseAgent):
 
     # ── PERCEIVE ─────────────────────────────────────────────
     def perceive(self):
-        """Read the file path from the blackboard."""
         file_path = self.blackboard.read("file_path")
         print(f"  [ParserAgent] PERCEIVE → file path: {file_path}")
         self.blackboard.log_thinking(
@@ -46,14 +50,16 @@ class ParserAgent(BaseAgent):
         return {"file_path": file_path}
 
     # ── REASON ───────────────────────────────────────────────
-    def reason(self, perception: dict) -> list:
+    def reason(self, perception: dict) -> dict:
         """
         Full pipeline:
           raw text → slides → noun phrases → clean candidates → LLM concept graph
+          → per-concept context extraction
+        Returns a dict with "graph" and "contexts".
         """
         path = perception["file_path"]
 
-        # ── Step 1: extract raw text ──────────────────────
+        # Step 1: extract raw text
         print("\n  [ParserAgent] REASON Step 1: Extracting text from file...")
         raw_text = self._extract_text(path)
         print(f"  [ParserAgent] Extracted {len(raw_text)} characters of text")
@@ -62,16 +68,16 @@ class ParserAgent(BaseAgent):
             f"Extracted {len(raw_text)} characters. Splitting into slides..."
         )
 
-        # ── Step 2: split into slides ─────────────────────
+        # Step 2: split into slides
         slides = self._split_into_slides(raw_text)
         print(f"  [ParserAgent] Found {len(slides)} slides/sections")
 
-        # ── Step 3: spaCy extracts noun phrases ──────────
+        # Step 3: spaCy extracts noun phrases
         print("\n  [ParserAgent] REASON Step 2: Running spaCy NLP...")
         candidates = self._extract_noun_phrases(slides)
         print(f"  [ParserAgent] Raw noun phrases found: {len(candidates)}")
 
-        # ── Step 4: clean and rank ────────────────────────
+        # Step 4: clean and rank
         clean_concepts = self._clean_candidates(candidates)
         print(f"  [ParserAgent] After cleaning: {len(clean_concepts)} concepts")
         print(f"  [ParserAgent] Candidates → {clean_concepts}")
@@ -80,40 +86,108 @@ class ParserAgent(BaseAgent):
             f"NLP found {len(clean_concepts)} candidate concepts: {clean_concepts[:5]}..."
         )
 
-        # ── Step 5: LLM builds dependency graph ──────────
+        # Step 5: LLM builds dependency graph
         print("\n  [ParserAgent] REASON Step 3: Asking LLM to build concept graph...")
-        concept_graph = self._build_concept_graph(clean_concepts, raw_text[:3000])
+        concept_graph = self._build_concept_graph(clean_concepts, raw_text[:4000])
         print(f"  [ParserAgent] Concept graph built with {len(concept_graph)} concepts")
 
-        return concept_graph
+        # Step 6 (NEW): extract per-concept contexts from full lecture text
+        print("\n  [ParserAgent] REASON Step 4: Extracting per-concept lecture contexts...")
+        concept_contexts = self._extract_concept_contexts(concept_graph, raw_text, slides)
+        print(f"  [ParserAgent] Built contexts for {len(concept_contexts)} concepts")
+
+        return {"graph": concept_graph, "contexts": concept_contexts}
 
     # ── ACT ──────────────────────────────────────────────────
-    def act(self, decision: list):
-        """Write the concept graph and set the first concept."""
-        self.blackboard.write("concept_graph",   decision)
-        self.blackboard.write("current_concept", decision[0]["concept"])
+    def act(self, decision: dict):
+        """Write the concept graph, concept contexts, and set the first concept."""
+        graph    = decision["graph"]
+        contexts = decision["contexts"]
+
+        self.blackboard.write("concept_graph",    graph)
+        self.blackboard.write("concept_contexts", contexts)
+        self.blackboard.write("current_concept",  graph[0]["concept"])
 
         print("\n  [ParserAgent] ACT → Writing to blackboard:")
         print(f"  {'─'*40}")
-        for i, c in enumerate(decision):
-            deps = c.get("depends_on", [])
+        for i, c in enumerate(graph):
+            deps    = c.get("depends_on", [])
             dep_str = f" (needs: {deps})" if deps else " (no prerequisites)"
-            print(f"  {i+1}. [{c['difficulty']}/5] {c['concept']}{dep_str}")
+            ctx_len = len(contexts.get(c['concept'], ''))
+            print(f"  {i+1}. [{c['difficulty']}/5] {c['concept']}{dep_str}  [ctx: {ctx_len} chars]")
         print(f"  {'─'*40}")
-        print(f"  [ParserAgent] Starting concept: {decision[0]['concept']}")
+        print(f"  [ParserAgent] Starting concept: {graph[0]['concept']}")
 
         self.blackboard.log_thinking(
             "ParserAgent",
-            f"Concept graph ready. Found {len(decision)} concepts. "
-            f"Starting with: '{decision[0]['concept']}' (easiest first)."
+            f"Concept graph ready. Found {len(graph)} concepts with per-concept contexts. "
+            f"Starting with: '{graph[0]['concept']}' (easiest first)."
         )
+
+    # ── PER-CONCEPT CONTEXT EXTRACTION (NEW) ─────────────────
+    def _extract_concept_contexts(
+        self, graph: list, raw_text: str, slides: list
+    ) -> dict:
+        """
+        For each concept in the graph, find the most relevant slide(s) / paragraph(s)
+        from the lecture text and store up to ~800 characters.
+
+        Strategy (in priority order):
+          1. Find slides that contain the concept name (case-insensitive).
+          2. If none found, use LLM to identify the best passage (for short lectures).
+          3. Fall back to the concept's own summary from the graph.
+        """
+        contexts = {}
+
+        for node in graph:
+            concept = node["concept"]
+            summary = node.get("summary", "")
+
+            # ── Strategy 1: keyword search in slides ──────────
+            keyword      = concept.lower()
+            # also try the first word if multi-word (e.g. "Bayesian Network" → "bayesian")
+            keyword_alt  = keyword.split()[0] if " " in keyword else None
+
+            matching_slides = []
+            for slide in slides:
+                slide_lower = slide.lower()
+                if keyword in slide_lower or (keyword_alt and keyword_alt in slide_lower):
+                    matching_slides.append(slide)
+
+            if matching_slides:
+                # Concatenate up to 3 most relevant slides, trimmed to 800 chars
+                combined = "\n\n".join(matching_slides[:3])
+                contexts[concept] = combined[:800].strip()
+                continue
+
+            # ── Strategy 2: search raw_text by paragraph ──────
+            paragraphs = [p.strip() for p in re.split(r"\n{2,}", raw_text) if p.strip()]
+            matching_paras = [
+                p for p in paragraphs
+                if keyword in p.lower() or (keyword_alt and keyword_alt in p.lower())
+            ]
+            if matching_paras:
+                combined = "\n\n".join(matching_paras[:4])
+                contexts[concept] = combined[:800].strip()
+                continue
+
+            # ── Strategy 3: fall back to summary from graph ───
+            # Supplement with any surrounding text from raw_text using a wider search
+            first_occurrence = raw_text.lower().find(keyword)
+            if first_occurrence != -1:
+                start  = max(0, first_occurrence - 200)
+                end    = min(len(raw_text), first_occurrence + 600)
+                snippet = raw_text[start:end].strip()
+                contexts[concept] = snippet[:800]
+            else:
+                contexts[concept] = summary  # last resort
+
+        return contexts
 
     # ── PRIVATE HELPERS ───────────────────────────────────────
 
     def _extract_text(self, path: str) -> str:
-        """Extract raw text from any supported file format."""
         ext = path.lower().split(".")[-1]
-
         if ext in ["ppt", "pptx"]:
             return self._extract_from_pptx(path)
         elif ext == "pdf":
@@ -127,7 +201,6 @@ class ParserAgent(BaseAgent):
             raise ValueError(f"Unsupported file format: .{ext}")
 
     def _extract_from_pptx(self, path: str) -> str:
-        """Extract text from PowerPoint using python-pptx."""
         try:
             from pptx import Presentation
             prs = Presentation(path)
@@ -141,11 +214,9 @@ class ParserAgent(BaseAgent):
                     slides_text.append("\f".join(slide_parts))
             return "\f".join(slides_text)
         except ImportError:
-            # fallback to markitdown
             return self._extract_with_markitdown(path)
 
     def _extract_from_pdf(self, path: str) -> str:
-        """Extract text from PDF using PyMuPDF."""
         try:
             import fitz  # PyMuPDF
             doc = fitz.open(path)
@@ -157,7 +228,6 @@ class ParserAgent(BaseAgent):
             return self._extract_with_markitdown(path)
 
     def _extract_from_docx(self, path: str) -> str:
-        """Extract text from Word document."""
         try:
             from docx import Document
             doc = Document(path)
@@ -166,7 +236,6 @@ class ParserAgent(BaseAgent):
             return self._extract_with_markitdown(path)
 
     def _extract_with_markitdown(self, path: str) -> str:
-        """Universal fallback using markitdown library."""
         try:
             from markitdown import MarkItDown
             md = MarkItDown()
@@ -182,78 +251,53 @@ class ParserAgent(BaseAgent):
             )
 
     def _split_into_slides(self, raw_text: str) -> list:
-        """Split text into slide/page sections."""
-        # form feed character \f separates slides in most extractors
         slides = raw_text.split("\f")
-        # also split on double newlines as backup
         if len(slides) < 3:
             slides = re.split(r"\n{3,}", raw_text)
-        # filter out very short sections (slide numbers, blank slides)
         slides = [s.strip() for s in slides if len(s.strip()) > 30]
         return slides
 
     def _extract_noun_phrases(self, slides: list) -> list:
-        """Use spaCy to extract meaningful noun phrases from all slides."""
         if self.nlp is None:
             return self._extract_candidate_phrases_fallback(slides)
         all_phrases = []
         for slide in slides:
-            doc = self.nlp(slide[:1000])  # limit per slide for speed
+            doc = self.nlp(slide[:1000])
             for chunk in doc.noun_chunks:
                 text = chunk.text.lower().strip()
-                # keep only multi-word phrases (more likely to be concepts)
                 if len(text.split()) >= 2 and len(text) > 5:
                     all_phrases.append(text)
         return all_phrases
-    def _extract_candidate_phrases_fallback(self, slides: list) -> list:
-        """
-        Heuristic fallback when the spaCy model is unavailable.
-        It prefers short heading-like lines and repeated 2-4 word phrases.
-        """
-        phrases = []
 
+    def _extract_candidate_phrases_fallback(self, slides: list) -> list:
+        phrases = []
         for slide in slides:
             for raw_line in slide.splitlines():
                 line = re.sub(r"[^A-Za-z0-9\-\s]", " ", raw_line).strip()
                 if not line:
                     continue
-
                 words = [w for w in line.lower().split() if len(w) > 2]
                 if 2 <= len(words) <= 6:
                     phrases.append(" ".join(words))
-
                 for n in (2, 3, 4):
                     for i in range(len(words) - n + 1):
                         gram = words[i:i + n]
                         if all(word.isalpha() for word in gram):
                             phrases.append(" ".join(gram))
-
         return phrases
 
-    
     def _clean_candidates(self, phrases: list) -> list:
-        """
-        Clean, deduplicate, and rank candidate concept phrases.
-        Keep only frequent ones — frequency = importance in the lecture.
-        """
-        # count frequency
         freq = Counter(phrases)
-
-        # remove generic stop-phrases that are never real concepts
         stopwords = {
             "the agent", "the system", "the user", "a number",
             "the process", "this part", "the problem", "the result",
             "the following", "the same", "the next", "the first",
             "the world", "the environment", "the set"
         }
-
-        # keep if appears ≥ 2 times and not a stopword
         clean = [
             phrase for phrase, count in freq.most_common(30)
             if count >= 1 and phrase not in stopwords
         ]
-
-        # remove substrings (e.g., if "agent" and "reactive agent" both appear, keep "reactive agent")
         final = []
         for phrase in clean:
             is_substring = any(
@@ -262,20 +306,20 @@ class ParserAgent(BaseAgent):
             )
             if not is_substring:
                 final.append(phrase)
-
-        return final[:20]  # max 20 candidates
+        return final[:20]
 
     def _build_concept_graph(self, candidates: list, lecture_context: str) -> list:
         """
         Ask the LLM to select real teachable concepts from the candidate list
         and build an ordered dependency graph with proper summaries.
+        Uses more lecture context (4 000 chars) for better accuracy.
         """
         prompt = f"""You are an expert curriculum designer analyzing a university lecture.
 
 Here are candidate topics extracted from the lecture (may include noise):
 {candidates}
 
-Here is the lecture content (first 3000 characters):
+Here is the lecture content (first 4000 characters):
 \"\"\"
 {lecture_context}
 \"\"\"
@@ -286,7 +330,7 @@ STRICT RULES:
 1. Each concept must be a proper academic topic (e.g. "Natural Language Processing", "Text Corpora", "Tokenization").
 2. NEVER include: professor names, emails, course codes, "agenda", "contents", sentence fragments, or anything that is not a topic.
 3. Order concepts from simplest to most complex (concept 1 has no prerequisites).
-4. The "summary" field must be 1-2 sentences explaining what the concept IS, taken from the lecture content.
+4. The "summary" field must be 2-3 sentences explaining what the concept IS, taken DIRECTLY from the lecture content above.
 5. "difficulty" must be 1 (easiest) to 5 (hardest).
 6. "depends_on" must be concept names that must be understood first (empty list for first concept).
 
@@ -296,16 +340,15 @@ Return ONLY valid JSON, no markdown:
     "concept": "Natural Language",
     "difficulty": 1,
     "depends_on": [],
-    "summary": "A natural language is one developed by humans through natural use and communication, as opposed to artificial programming languages."
+    "summary": "A natural language is one developed by humans through natural use and communication, as opposed to artificial programming languages. It is the primary object of study in NLP."
   }},
   ...
 ]"""
 
         try:
-            raw = call_llm(prompt, max_tokens=900)
+            raw   = call_llm(prompt, max_tokens=1000)
             graph = parse_json(raw)
 
-            # Validate: each item must have a real concept name AND a real summary
             forbidden_in_concept = {"dr.", "prof", "email", "@", "university", "agenda",
                                      "contents", "maryam", "noha", "nourhan", "copyright",
                                      ".edu", ".com", "csc"}
@@ -319,7 +362,7 @@ Return ONLY valid JSON, no markdown:
                 and len(c["concept"].split()) <= 7
                 and not c["concept"].endswith((",", "."))
                 and not any(f in c["concept"].lower() for f in forbidden_in_concept)
-                and len(c["summary"]) >= 20
+                and len(c["summary"]) >= 30
                 and " " in c["summary"]
                 and not any(f in c["summary"].lower() for f in forbidden_in_summary)
             ]
@@ -334,11 +377,6 @@ Return ONLY valid JSON, no markdown:
             return self._fallback_graph_from_text(lecture_context)
 
     def _fallback_graph_from_text(self, text: str) -> list:
-        """
-        Heuristic fallback: extract slide headings as concepts.
-        Produces real summaries by grabbing the first clean sentence after each heading.
-        """
-        # Anything matching these patterns is NEVER a concept name or a summary
         garbage_patterns = [
             "dr.", "prof", "email", "@", ".edu", ".com", ".org",
             "contents", "agenda", "lecture", "university", "copyright",
@@ -351,25 +389,21 @@ Return ONLY valid JSON, no markdown:
             return any(g in low for g in garbage_patterns)
 
         def looks_like_sentence(s: str) -> bool:
-            """True if s is a real descriptive sentence, not an email/code/fragment."""
             if is_garbage(s):
                 return False
             if len(s) < 25:
                 return False
-            # Must contain at least one space (i.e. multiple words)
             if " " not in s:
                 return False
-            # Must start with a letter, not a bullet symbol or digit
             if not s[0].isalpha():
-                # Allow bullet prefix like "• word ..." by stripping it
                 s = s.lstrip("•–-– ").strip()
                 if not s or not s[0].isalpha():
                     return False
             return True
 
-        lines = text.splitlines()
+        lines    = text.splitlines()
         headings = []
-        seen = set()
+        seen     = set()
 
         for i, raw_line in enumerate(lines):
             line = raw_line.strip()
@@ -379,17 +413,13 @@ Return ONLY valid JSON, no markdown:
                 continue
             if line.endswith(",") or not line[0].isupper():
                 continue
-
             word_count = len(line.split())
-            # Require at least 2 words so single words like "Processing" from
-            # a title slide are skipped (they're never real concept headings)
             if word_count < 2 or word_count > 6:
                 continue
             if line in seen:
                 continue
             seen.add(line)
 
-            # Grab the first clean descriptive line after this heading
             summary = ""
             for j in range(i + 1, min(i + 8, len(lines))):
                 candidate = lines[j].strip().lstrip("•–-– ").strip()
@@ -402,9 +432,7 @@ Return ONLY valid JSON, no markdown:
 
             headings.append((line, summary))
 
-        # Skip the first 2 entries (usually course title / instructor slide)
         valid = headings[2:10] if len(headings) > 4 else headings
-
         return [
             {
                 "concept":    h,
