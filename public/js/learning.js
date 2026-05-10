@@ -40,6 +40,7 @@ function hasActiveSession() {
 function toggleTheme() {
   const isDark = document.body.classList.toggle('dark');
   document.getElementById('themeLabel').textContent = isDark ? 'Light mode' : 'Dark mode';
+  localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
   const icon = document.getElementById('themeIcon');
   icon.innerHTML = isDark
     ? `<circle cx="12" cy="12" r="5"/>
