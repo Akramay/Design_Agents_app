@@ -1,3 +1,4 @@
+
 # Design_Agents_app
 
 ## Project Overview
@@ -11,7 +12,6 @@ The **Intelligent Multi-Agent Adaptive Learning System** is an advanced AI-drive
 * **Analytics Dashboards:** Provides comprehensive progress tracking, concept prerequisite tracking, and automatic feedback for students.
 
 ---
-
 ## Prerequisites
 Before run you must install the following dependencies:
 
@@ -19,6 +19,7 @@ Before run you must install the following dependencies:
 pip install markitdown[all]
 pip install python-dotenv
 pip install spacy
+```
 ---
 
 ## Development Workflow
