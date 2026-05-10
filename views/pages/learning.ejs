@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/learning.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    
 </head>
 <body>
 <div class="app">
@@ -259,6 +261,29 @@
   </div>
   <span id="notifText">Done!</span>
 </div>
+
+<!-- Confirmation Modal -->
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="confirmTitle">Confirm Action</div>
+      <button class="modal-close" onclick="closeConfirmModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMessage">Are you sure you want to proceed?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeConfirmModal()">Cancel</button>
+      <button class="modal-btn danger" id="confirmActionBtn" onclick="executeConfirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/learning.js"></script>
 
 <!-- Theme initialization script -->

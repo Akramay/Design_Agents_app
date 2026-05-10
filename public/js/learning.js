@@ -8,6 +8,7 @@ const App = {
   session: null,
   sessionId: null,  // Current session ID
   hintUsed: false,
+  confirmAction: null,  // Function to execute when modal is confirmed
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -564,61 +565,87 @@ async function refreshSession() {
   }
 }
 
-async function resetApp() {
-  if (!confirm('Are you sure you want to end this session and start a new one?')) {
-    return;
-  }
-  
-  const sessionId = getSessionId();
-  if (sessionId) {
-    try {
-      await apiFetch('/learn/api/session/reset', {
-        method: 'POST',
-        body: JSON.stringify({ session_id: sessionId }),
-      });
-    } catch (error) {
-      // Continue with reset even if backend fails
+async function endSession() {
+  showConfirmModal(
+    'End Session',
+    'Are you sure you want to end this session and return home?',
+    'End Session',
+    async () => {
+      const sessionId = getSessionId();
+      if (sessionId) {
+        try {
+          await apiFetch('/learn/api/session/reset', {
+            method: 'POST',
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+        } catch (error) {
+          // Ignore errors
+        }
+      }
+      
+      // Clear session and redirect
+      clearSessionId();
+      window.location.href = '/';
     }
-  }
-
-  // Clear session
-  clearSessionId();
-  
-  App.procTimers.forEach((timer) => clearTimeout(timer));
-  App.procTimers = [];
-  App.selectedFile = null;
-  App.session = null;
-  App.questionStartedAt = null;
-  App.hintUsed = false;
-
-  document.getElementById('fileInput').value = '';
-  document.getElementById('filePreview').classList.add('hidden');
-  document.getElementById('genArea').classList.add('hidden');
-  document.getElementById('answerInput').value = '';
-  setState('stateUpload');
-  showNotif('Ready for another lecture.');
+  );
 }
 
-async function endSession() {
-  if (!confirm('Are you sure you want to end this session and return home?')) {
-    return;
-  }
-  
-  const sessionId = getSessionId();
-  if (sessionId) {
-    try {
-      await apiFetch('/learn/api/session/reset', {
-        method: 'POST',
-        body: JSON.stringify({ session_id: sessionId }),
-      });
-    } catch (error) {
-      // Ignore errors
+async function resetApp() {
+  showConfirmModal(
+    'New Lecture',
+    'Are you sure you want to end this session and start a new one?',
+    'Start New',
+    async () => {
+      const sessionId = getSessionId();
+      if (sessionId) {
+        try {
+          await apiFetch('/learn/api/session/reset', {
+            method: 'POST',
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+        } catch (error) {
+          // Continue with reset even if backend fails
+        }
+      }
+
+      // Clear session
+      clearSessionId();
+      
+      App.procTimers.forEach((timer) => clearTimeout(timer));
+      App.procTimers = [];
+      App.selectedFile = null;
+      App.session = null;
+      App.questionStartedAt = null;
+      App.hintUsed = false;
+
+      document.getElementById('fileInput').value = '';
+      document.getElementById('filePreview').classList.add('hidden');
+      document.getElementById('genArea').classList.add('hidden');
+      document.getElementById('answerInput').value = '';
+      setState('stateUpload');
+      showNotif('Ready for another lecture.');
     }
+  );
+}
+
+function showConfirmModal(title, message, buttonText, action) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  document.getElementById('confirmActionBtn').textContent = buttonText;
+  App.confirmAction = action;
+  document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModal').classList.add('hidden');
+  App.confirmAction = null;
+}
+
+async function executeConfirmAction() {
+  if (App.confirmAction) {
+    await App.confirmAction();
   }
-  
-  // Clear session and redirect
-  clearSessionId();
-  window.location.href = '/';
+  closeConfirmModal();
 }
 
 function updateTimerHint(expectedSeconds) {
