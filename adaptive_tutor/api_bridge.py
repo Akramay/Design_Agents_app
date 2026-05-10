@@ -3,13 +3,41 @@ import json
 import os
 import sys
 import traceback
+import time
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime, timedelta
 
 from blackboard import Blackboard
-from main import STUDENT_STATE_FILE, build_system
+from main import build_system
+
+# Session files directory
+SESSION_DIR = "sessions"
+SESSION_TIMEOUT_HOURS = 24  # Auto-delete sessions older than this
+
+# Create sessions directory if it doesn't exist
+os.makedirs(SESSION_DIR, exist_ok=True)
 
 
-def _serialize_session(bb):
+def _get_session_path(session_id):
+    """Get the file path for a specific session."""
+    return os.path.join(SESSION_DIR, f"student_state_{session_id}.json")
+
+
+def _cleanup_old_sessions():
+    """Delete session files older than SESSION_TIMEOUT_HOURS."""
+    try:
+        cutoff_time = time.time() - (SESSION_TIMEOUT_HOURS * 3600)
+        for filename in os.listdir(SESSION_DIR):
+            if filename.startswith("student_state_") and filename.endswith(".json"):
+                filepath = os.path.join(SESSION_DIR, filename)
+                if os.path.getmtime(filepath) < cutoff_time:
+                    os.remove(filepath)
+                    print(f"  [Cleanup] Deleted old session: {filename}")
+    except Exception as e:
+        print(f"  [Cleanup] Error during cleanup: {e}")
+
+
+def _serialize_session(bb, session_id):
     """Serialize the current session state for the frontend."""
     graph = bb.read("concept_graph") or []
     model = bb.read("student_model") or {}
@@ -30,6 +58,7 @@ def _serialize_session(bb):
             break
 
     return {
+        "session_id": session_id,
         "file_path": bb.read("file_path"),
         "lecture_title": os.path.basename(bb.read("file_path") or ""),
         "current_concept": current_concept,
@@ -59,58 +88,84 @@ def _serialize_session(bb):
 def _handle_request(payload):
     action = payload.get("action")
 
+    # Clean up old sessions on every request
+    _cleanup_old_sessions()
+
     if action == "reset":
-        if os.path.exists(STUDENT_STATE_FILE):
-            os.remove(STUDENT_STATE_FILE)
-        return {"ok": True, "message": "Session reset."}
+        session_id = payload.get("session_id")
+        if session_id:
+            session_path = _get_session_path(session_id)
+            if os.path.exists(session_path):
+                os.remove(session_path)
+                return {"ok": True, "message": "Session deleted."}
+        return {"ok": True, "message": "No session to delete."}
 
     if action == "setup":
+        # Generate new session ID
+        session_id = f"{int(time.time())}_{os.urandom(4).hex()}"
+        session_path = _get_session_path(session_id)
+        
         lecture_path = payload["file_path"]
-        orchestrator, bb = build_system(resume=False)
+        orchestrator, bb = build_system(resume=False, save_path=session_path)
         orchestrator.setup_session(lecture_path)
         bb.save()
+        
         return {
             "ok": True,
             "message": "Session created.",
-            "session": _serialize_session(bb),
+            "session_id": session_id,
+            "session": _serialize_session(bb, session_id),
         }
 
     if action == "answer":
+        session_id = payload.get("session_id")
+        if not session_id:
+            raise RuntimeError("No session_id provided.")
+        
+        session_path = _get_session_path(session_id)
+        if not os.path.exists(session_path):
+            raise RuntimeError("Session expired or not found. Please start a new session.")
+        
         answer_text = payload.get("answer", "")
         time_taken = float(payload.get("time_taken", 30))
         hint_used = bool(payload.get("hint_used", False))
         
-        # Build system without parser (resume session)
-        orchestrator, bb = build_system(resume=True)
+        # Build system and resume session
+        orchestrator, bb = build_system(resume=True, save_path=session_path)
         
         if not bb.read("current_question"):
-            raise RuntimeError("No active session found. Start with setup first.")
+            raise RuntimeError("No active question. Session may be corrupted.")
         
-        # Process answer with hint_used parameter
+        # Process answer
         decision = orchestrator.process_answer(answer_text, time_taken, hint_used)
         
         return {
             "ok": True,
             "message": "Answer processed.",
             "decision": decision,
-            "session": _serialize_session(bb),
+            "session": _serialize_session(bb, session_id),
         }
 
     if action == "get_hint":
-        # Request a hint without submitting answer
-        bb = Blackboard(save_path=STUDENT_STATE_FILE)
+        session_id = payload.get("session_id")
+        if not session_id:
+            raise RuntimeError("No session_id provided.")
+        
+        session_path = _get_session_path(session_id)
+        if not os.path.exists(session_path):
+            raise RuntimeError("Session expired or not found.")
+        
+        bb = Blackboard(save_path=session_path)
         if not bb.load():
-            return {"ok": False, "error": "No active session found."}
+            raise RuntimeError("Could not load session.")
         
         hint_available = bb.read("hint_available")
         if not hint_available:
             return {"ok": False, "error": "Hint already used for this question."}
         
-        # Generate hint using FeedbackAgent
+        # Generate hint
         from question_feedback_agents import FeedbackAgent
         feedback_agent = FeedbackAgent(bb)
-        
-        # Set up decision for hint generation
         bb.write("llm_decision", {"action": "SHOW_HINT"})
         feedback_agent.run()
         bb.save()
@@ -118,14 +173,23 @@ def _handle_request(payload):
         return {
             "ok": True,
             "message": "Hint generated.",
-            "session": _serialize_session(bb),
+            "session": _serialize_session(bb, session_id),
         }
 
     if action == "state":
-        bb = Blackboard(save_path=STUDENT_STATE_FILE)
+        session_id = payload.get("session_id")
+        if not session_id:
+            return {"ok": False, "error": "No session_id provided."}
+        
+        session_path = _get_session_path(session_id)
+        if not os.path.exists(session_path):
+            return {"ok": False, "error": "Session expired or not found."}
+        
+        bb = Blackboard(save_path=session_path)
         if not bb.load():
-            return {"ok": False, "error": "No active session found."}
-        return {"ok": True, "session": _serialize_session(bb)}
+            return {"ok": False, "error": "Could not load session."}
+        
+        return {"ok": True, "session": _serialize_session(bb, session_id)}
 
     raise ValueError(f"Unsupported action: {action}")
 

@@ -16,9 +16,9 @@ import re
 from collections import Counter
 
 import spacy
-import ollama
 
-from base_agent import BaseAgent
+from base_agent   import BaseAgent
+from llm_provider import call_llm, parse_json
 
 
 class ParserAgent(BaseAgent):
@@ -267,64 +267,150 @@ class ParserAgent(BaseAgent):
 
     def _build_concept_graph(self, candidates: list, lecture_context: str) -> list:
         """
-        Ask LLM to order candidates by difficulty and build dependency links.
-        This is the only NLP step that requires semantic understanding.
+        Ask the LLM to select real teachable concepts from the candidate list
+        and build an ordered dependency graph with proper summaries.
         """
-        prompt = f"""You are a curriculum designer for a university AI course.
+        prompt = f"""You are an expert curriculum designer analyzing a university lecture.
 
-Here is context from the lecture:
-\"\"\"{lecture_context}\"\"\"
-
-Here are candidate concepts extracted from the lecture:
+Here are candidate topics extracted from the lecture (may include noise):
 {candidates}
 
-Your task:
-1. Select the most important 6-10 concepts from the candidates
-2. Order them from easiest to hardest
-3. Identify which concepts depend on others
+Here is the lecture content (first 3000 characters):
+\"\"\"
+{lecture_context}
+\"\"\"
 
-Return ONLY a valid JSON array. Each item must have:
-- "concept": clean, properly capitalized concept name (string)
-- "difficulty": integer 1 (easiest) to 5 (hardest)  
-- "depends_on": list of concept names that must be understood first (can be empty list)
-- "summary": one sentence explaining this concept
+Your task: select 5-8 REAL, teachable concepts from this lecture.
 
-Example format:
+STRICT RULES:
+1. Each concept must be a proper academic topic (e.g. "Natural Language Processing", "Text Corpora", "Tokenization").
+2. NEVER include: professor names, emails, course codes, "agenda", "contents", sentence fragments, or anything that is not a topic.
+3. Order concepts from simplest to most complex (concept 1 has no prerequisites).
+4. The "summary" field must be 1-2 sentences explaining what the concept IS, taken from the lecture content.
+5. "difficulty" must be 1 (easiest) to 5 (hardest).
+6. "depends_on" must be concept names that must be understood first (empty list for first concept).
+
+Return ONLY valid JSON, no markdown:
 [
-  {{"concept": "What is an Agent", "difficulty": 1, "depends_on": [], "summary": "An agent is a system that perceives its environment and takes actions."}},
-  {{"concept": "Agent Architecture", "difficulty": 2, "depends_on": ["What is an Agent"], "summary": "The internal design blueprint that determines how an agent processes information and decides actions."}}
-]
-
-Return ONLY the JSON array, no explanation, no markdown code blocks."""
-
-        try:
-            response = ollama.chat(
-                model="llama3",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            raw = response["message"]["content"].strip()
-        except Exception as e:
-            print(f"  [ParserAgent] Error occurred while calling LLM: {e}")
-            raw = "fallback lexical grader"
-
-        # strip markdown code blocks if LLM added them
-        raw = re.sub(r"```json\s*", "", raw)
-        raw = re.sub(r"```\s*", "", raw)
+  {{
+    "concept": "Natural Language",
+    "difficulty": 1,
+    "depends_on": [],
+    "summary": "A natural language is one developed by humans through natural use and communication, as opposed to artificial programming languages."
+  }},
+  ...
+]"""
 
         try:
-            graph = json.loads(raw)
-            # sort by difficulty to guarantee order
-            graph.sort(key=lambda x: x.get("difficulty", 1))
-            return graph
-        except Exception as e:
-            print(f"  [ParserAgent] WARNING: LLM graph generation failed: {e}")
-           
-            return [
-                {
-                    "concept": c.title(),
-                    "difficulty": min(i + 1, 5),
-                    "depends_on": [],
-                    "summary": f"Concept: {c}"
-                }
-                for i, c in enumerate(candidates[:8])
+            raw = call_llm(prompt, max_tokens=900)
+            graph = parse_json(raw)
+
+            # Validate: each item must have a real concept name AND a real summary
+            forbidden_in_concept = {"dr.", "prof", "email", "@", "university", "agenda",
+                                     "contents", "maryam", "noha", "nourhan", "copyright",
+                                     ".edu", ".com", "csc"}
+            forbidden_in_summary = {"@", ".edu", ".com", "http", "dr.", "prof",
+                                     "miuegypt", "csc0275"}
+            cleaned = [
+                c for c in graph
+                if isinstance(c.get("concept"), str)
+                and isinstance(c.get("summary"), str)
+                and len(c["concept"]) <= 60
+                and len(c["concept"].split()) <= 7
+                and not c["concept"].endswith((",", "."))
+                and not any(f in c["concept"].lower() for f in forbidden_in_concept)
+                and len(c["summary"]) >= 20
+                and " " in c["summary"]
+                and not any(f in c["summary"].lower() for f in forbidden_in_summary)
             ]
+
+            if len(cleaned) < 3:
+                raise ValueError(f"Too few valid concepts after filtering: {cleaned}")
+
+            return cleaned
+
+        except Exception as e:
+            print(f"  [ParserAgent] LLM concept graph failed ({e}), using fallback...")
+            return self._fallback_graph_from_text(lecture_context)
+
+    def _fallback_graph_from_text(self, text: str) -> list:
+        """
+        Heuristic fallback: extract slide headings as concepts.
+        Produces real summaries by grabbing the first clean sentence after each heading.
+        """
+        # Anything matching these patterns is NEVER a concept name or a summary
+        garbage_patterns = [
+            "dr.", "prof", "email", "@", ".edu", ".com", ".org",
+            "contents", "agenda", "lecture", "university", "copyright",
+            "page", "slide", "textbook", "marks", "attendance",
+            "midterm", "final exam", "csc", "miuegypt", "eng.",
+        ]
+
+        def is_garbage(s: str) -> bool:
+            low = s.lower()
+            return any(g in low for g in garbage_patterns)
+
+        def looks_like_sentence(s: str) -> bool:
+            """True if s is a real descriptive sentence, not an email/code/fragment."""
+            if is_garbage(s):
+                return False
+            if len(s) < 25:
+                return False
+            # Must contain at least one space (i.e. multiple words)
+            if " " not in s:
+                return False
+            # Must start with a letter, not a bullet symbol or digit
+            if not s[0].isalpha():
+                # Allow bullet prefix like "• word ..." by stripping it
+                s = s.lstrip("•–-– ").strip()
+                if not s or not s[0].isalpha():
+                    return False
+            return True
+
+        lines = text.splitlines()
+        headings = []
+        seen = set()
+
+        for i, raw_line in enumerate(lines):
+            line = raw_line.strip()
+            if not line or len(line) < 5 or len(line) > 60:
+                continue
+            if is_garbage(line):
+                continue
+            if line.endswith(",") or not line[0].isupper():
+                continue
+
+            word_count = len(line.split())
+            # Require at least 2 words so single words like "Processing" from
+            # a title slide are skipped (they're never real concept headings)
+            if word_count < 2 or word_count > 6:
+                continue
+            if line in seen:
+                continue
+            seen.add(line)
+
+            # Grab the first clean descriptive line after this heading
+            summary = ""
+            for j in range(i + 1, min(i + 8, len(lines))):
+                candidate = lines[j].strip().lstrip("•–-– ").strip()
+                if looks_like_sentence(candidate):
+                    summary = candidate[:180]
+                    break
+
+            if not summary:
+                summary = f"{line} is a core concept covered in this lecture."
+
+            headings.append((line, summary))
+
+        # Skip the first 2 entries (usually course title / instructor slide)
+        valid = headings[2:10] if len(headings) > 4 else headings
+
+        return [
+            {
+                "concept":    h,
+                "difficulty": min(i + 1, 5),
+                "depends_on": [],
+                "summary":    s,
+            }
+            for i, (h, s) in enumerate(valid)
+        ]

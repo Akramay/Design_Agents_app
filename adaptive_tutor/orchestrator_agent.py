@@ -18,13 +18,12 @@ FIXED ISSUES:
 - Added question history to prevent duplicates
 """
 
-import json
 import re
 import hashlib
-import ollama
 
-from base_agent import BaseAgent
-from bkt_agent import BKT_PARAMS
+from base_agent   import BaseAgent
+from llm_provider import call_llm, parse_json
+from bkt_agent    import BKT_PARAMS
 
 
 class OrchestratorAgent(BaseAgent):
@@ -259,13 +258,9 @@ Respond with ONLY one word: "true" if correct, "false" if incorrect.
 Be lenient — if they show understanding of the core concept, mark it true."""
 
         try:
-            response = ollama.chat(
-                model="llama3",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            result = response["message"]["content"].strip().lower()
+            result = call_llm(prompt, max_tokens=10).strip().lower()
             correct = "true" in result
-            
+
             print(f"  [Orchestrator] Essay Grading result: {'✓ CORRECT' if correct else '✗ WRONG'}")
             print(f"  [Orchestrator] LLM grader said: \"{result}\"")
             
@@ -363,14 +358,8 @@ Action guide:
         print(f"  [Orchestrator] Sending reasoning prompt to LLM...")
 
         try:
-            response = ollama.chat(
-                model="llama3",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            raw = response["message"]["content"].strip()
-            raw = re.sub(r"```json\s*", "", raw)
-            raw = re.sub(r"```\s*", "", raw)
-            decision = json.loads(raw)
+            raw = call_llm(prompt, max_tokens=300)
+            decision = parse_json(raw)
             
         except Exception as e:
             print(f"  [Orchestrator] LLM reasoning failed: {e}")
@@ -417,27 +406,17 @@ Action guide:
 
     # ── PRIVATE: Route action ─────────────────────────────────
     def _execute_action(self, action: str):
-        """Route to the appropriate agent based on LLM decision."""
-        # Reset hint flag for next question
+        # Reset hint flag
         self.blackboard.write("hint_used_current_question", False)
-        
+
         if action in ["SHOW_HINT", "SHOW_EXPLANATION", "RECOMMEND_VIDEO"]:
             self.feedback.run()
-
+            # CRITICAL: Force a new question after feedback so we don't loop
+            self.question.run() 
         elif action == "NEXT_CONCEPT":
             self._advance_to_next_concept()
             self.question.run()
-
-        elif action == "SESSION_COMPLETE":
-            print(f"\n  [Orchestrator] 🎉 All concepts mastered! Session complete.")
-            self.blackboard.log_thinking(
-                "Orchestrator",
-                "All concepts mastered! Session complete. Well done!"
-            )
-
         else:
-            # INCREASE_DIFFICULTY / KEEP_LEVEL / DECREASE_DIFFICULTY
-            # IRT already picked the right b — just generate next question
             self.question.run()
 
     def _advance_to_next_concept(self):

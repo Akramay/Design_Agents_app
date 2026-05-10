@@ -1,0 +1,47 @@
+
+Introduction to Intelligent Agents
+====================================
+
+An intelligent agent is a system that perceives its environment 
+through sensors and acts upon it through actuators to achieve goals.
+
+Agent Architecture
+==================
+Agent architecture defines the internal design of an agent.
+Types include: reactive agents, deliberative agents, BDI agents,
+and layered architectures.
+
+Reactive Agents
+===============
+Reactive agents use simple condition-action rules.
+They respond immediately to stimuli without memory or planning.
+Example: Thermostat, Braitenberg vehicles.
+
+BDI Agents (Belief Desire Intention)
+=====================================
+BDI agents maintain three mental states:
+- Beliefs: what the agent thinks is true about the world
+- Desires: goals the agent wants to achieve  
+- Intentions: the goals the agent is currently committed to
+
+Multi-Agent Systems (MAS)
+==========================
+A multi-agent system contains multiple interacting agents.
+Types: CMAS (cooperative) and SMAS (self-interested).
+Communication: direct (message passing) or indirect (blackboard).
+
+Contract Net Protocol
+=====================
+Contract Net is a coordination protocol where:
+1. Manager recognizes a task
+2. Manager announces the task
+3. Contractors bid
+4. Manager awards to best bidder
+
+Speech Acts
+===========
+Speech acts are utterances that perform actions:
+- Locutionary: the literal words
+- Illocutionary: the intent
+- Perlocutionary: the effect on the hearer
+Types: representatives, directives, commissives, expressives, declarations.

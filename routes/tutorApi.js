@@ -62,9 +62,13 @@ function runPythonBridge(payload) {
   );
 }
 
-router.get('/session/state', (req, res) => {
+router.post('/session/state', (req, res) => {
   try {
-    const response = runPythonBridge({ action: 'state' });
+    const { session_id } = req.body || {};
+    const response = runPythonBridge({
+      action: 'state',
+      session_id: session_id,
+    });
     res.status(response.ok ? 200 : 404).json(response);
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -101,11 +105,27 @@ router.post('/session/setup', (req, res) => {
 
 router.post('/session/answer', (req, res) => {
   try {
-    const { answer, timeTaken } = req.body || {};
+    const { session_id, answer, timeTaken, hintUsed } = req.body || {};
     const response = runPythonBridge({
       action: 'answer',
+      session_id: session_id,
       answer: answer || '',
       time_taken: Number.isFinite(Number(timeTaken)) ? Number(timeTaken) : 30,
+      hint_used: Boolean(hintUsed),
+    });
+
+    res.status(response.ok ? 200 : 500).json(response);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+router.post('/session/hint', (req, res) => {
+  try {
+    const { session_id } = req.body || {};
+    const response = runPythonBridge({
+      action: 'get_hint',
+      session_id: session_id,
     });
 
     res.status(response.ok ? 200 : 500).json(response);
@@ -116,7 +136,11 @@ router.post('/session/answer', (req, res) => {
 
 router.post('/session/reset', (req, res) => {
   try {
-    const response = runPythonBridge({ action: 'reset' });
+    const { session_id } = req.body || {};
+    const response = runPythonBridge({
+      action: 'reset',
+      session_id: session_id,
+    });
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });

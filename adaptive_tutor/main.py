@@ -7,8 +7,7 @@ Two modes:
   1. setup_session(file_path) — parse lecture, initialize, get first question
   2. process_answer(text, time) — handle student answer, get next action
 
-For the web app (Flask/FastAPI), these two functions are your API endpoints.
-For testing, run this file directly with a sample lecture.
+UPDATED: Support for custom save paths (session-based files)
 """
 
 import json
@@ -24,20 +23,29 @@ from orchestrator_agent        import OrchestratorAgent
 
 # ── Configuration ─────────────────────────────────────────────
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")  # set in environment
-STUDENT_STATE_FILE = "student_state.json"
+STUDENT_STATE_FILE = "student_state.json"  # legacy default
 
 
-def build_system(resume: bool = False) -> OrchestratorAgent:
+def build_system(resume: bool = False, save_path: str = None) -> tuple:
     """
     Wire all agents together and return the orchestrator.
-    This is called once when the server starts.
+    
+    Args:
+        resume: Whether to resume from saved state
+        save_path: Custom path for state file (if None, uses STUDENT_STATE_FILE)
+    
+    Returns:
+        (orchestrator, blackboard) tuple
     """
+    # Use custom save path if provided, otherwise use default
+    state_file = save_path if save_path else STUDENT_STATE_FILE
+    
     # shared blackboard
-    bb = Blackboard(save_path=STUDENT_STATE_FILE)
+    bb = Blackboard(save_path=state_file)
 
     # try to resume previous session
     if resume and bb.load():
-        print("  [main] Resuming previous session from saved state")
+        print(f"  [main] Resuming session from {state_file}")
 
     # build all agents
     agents = {
@@ -89,7 +97,7 @@ def print_agent_thinking(bb: Blackboard):
 def get_flask_app(orchestrator, bb):
     """
     If you're using Flask, use this function.
-    It returns a Flask app with two endpoints.
+    It returns a Flask app with endpoints.
     """
     try:
         from flask import Flask, request, jsonify
@@ -112,8 +120,9 @@ def get_flask_app(orchestrator, bb):
             data       = request.json
             answer_txt = data.get("answer", "")
             time_taken = float(data.get("time_taken", 30))
+            hint_used  = bool(data.get("hint_used", False))
 
-            decision = orchestrator.process_answer(answer_txt, time_taken)
+            decision = orchestrator.process_answer(answer_txt, time_taken, hint_used)
 
             return jsonify({
                 "action":          decision["action"],
@@ -159,7 +168,6 @@ if __name__ == "__main__":
     orchestrator, bb = build_system(resume=False)
 
     # ── use a sample lecture text file for testing ────────
-    # In real use, this is the uploaded file path from the UI
     test_file = "sample_lecture.txt"
 
     # create a minimal test file if it doesn't exist
@@ -224,7 +232,12 @@ Types: representatives, directives, commissives, expressives, declarations.
     print(f"\n{'═'*55}")
     print(f"  FIRST QUESTION:")
     print(f"  Concept : {bb.read('current_concept')}")
+    print(f"  Type    : {q.get('type', 'essay').upper()}")
     print(f"  Q: {q['question']}")
+    if q.get('type') == 'mcq':
+        print(f"  Options:")
+        for i, opt in enumerate(q.get('options', [])):
+            print(f"    {chr(65+i)}. {opt}")
     print(f"  Expected time: {q['expected_time_seconds']}s")
     print(f"{'═'*55}")
 
@@ -232,27 +245,24 @@ Types: representatives, directives, commissives, expressives, declarations.
     print_state_summary(bb)
 
     # ── SIMULATE ANSWERS ──────────────────────────────────
-    # These simulate a student answering — replace with real input from UI
     test_answers = [
         {
             "answer": "An agent is a system that perceives its environment and takes actions to achieve goals",
             "time":   18.0,
+            "hint":   False,
             "label":  "Good answer, normal time"
         },
         {
             "answer": "BDI stands for Belief Desire Intention and these are the three mental states of a BDI agent",
             "time":   25.0,
+            "hint":   False,
             "label":  "Correct answer"
         },
         {
             "answer": "I don't know",
             "time":   45.0,
+            "hint":   False,
             "label":  "Wrong answer, slow time — should trigger explanation"
-        },
-        {
-            "answer": "Reactive agents respond immediately to stimuli using condition-action rules without memory",
-            "time":   12.0,
-            "label":  "Fast correct answer"
         },
     ]
 
@@ -261,13 +271,15 @@ Types: representatives, directives, commissives, expressives, declarations.
         print(f"  SIMULATED ANSWER #{i+1}: {test['label']}")
         print(f"  Student types: \"{test['answer']}\"")
         print(f"  Time taken:     {test['time']}s")
+        print(f"  Hint used:      {test['hint']}")
         print(f"{'═'*55}")
 
         input(f"\n  Press ENTER to process this answer...")
 
         decision = orchestrator.process_answer(
             answer_text = test["answer"],
-            time_taken  = test["time"]
+            time_taken  = test["time"],
+            hint_used   = test["hint"]
         )
 
         print(f"\n{'─'*55}")
@@ -296,9 +308,10 @@ Types: representatives, directives, commissives, expressives, declarations.
         if next_q:
             print(f"\n  NEXT QUESTION:")
             print(f"  Concept: {bb.read('current_concept')}")
+            print(f"  Type: {next_q.get('type', 'essay').upper()}")
             print(f"  Q: {next_q['question']}")
 
     print(f"\n{'═'*55}")
     print(f"  Test session complete!")
-    print(f"  State saved to: {STUDENT_STATE_FILE}")
+    print(f"  State saved to: {bb.save_path}")
     print(f"{'═'*55}")

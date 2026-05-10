@@ -6,8 +6,36 @@ const App = {
   procTimers: [],
   notifTimer: null,
   session: null,
+  sessionId: null,  // Current session ID
   hintUsed: false,
 };
+
+// ═══════════════════════════════════════════════════════════
+//  SESSION MANAGEMENT (auto-clears when browser closes)
+// ═══════════════════════════════════════════════════════════
+
+function getSessionId() {
+  // sessionStorage clears when browser/tab closes - perfect for our use case!
+  return sessionStorage.getItem('adaptive_tutor_session_id');
+}
+
+function setSessionId(sessionId) {
+  sessionStorage.setItem('adaptive_tutor_session_id', sessionId);
+  App.sessionId = sessionId;
+}
+
+function clearSessionId() {
+  sessionStorage.removeItem('adaptive_tutor_session_id');
+  App.sessionId = null;
+}
+
+function hasActiveSession() {
+  return getSessionId() !== null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI FUNCTIONS
+// ═══════════════════════════════════════════════════════════
 
 function toggleTheme() {
   const isDark = document.body.classList.toggle('dark');
@@ -116,6 +144,10 @@ function runProcessingAnimation() {
   });
 }
 
+// ═══════════════════════════════════════════════════════════
+//  API FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -168,6 +200,9 @@ async function startProcessing() {
       }),
     });
 
+    // Store the new session ID
+    setSessionId(data.session_id);
+    
     applySession(data.session, data.decision);
     setState('stateResults');
     showNotif('Adaptive session is ready.');
@@ -221,17 +256,10 @@ function applySession(session, decision) {
     `Current question difficulty is ${question.difficulty || 'adaptive'} and the next step depends on the student's answer.`;
 
   // HIDE concept graph as requested
-  // renderConceptGraph(session.concept_graph || [], session.current_concept, session.student_model || {});
   hideConceptGraph();
   
   renderThinking(session.agent_thinking || []);
   renderFeedback(session);
-  
-  // Reset answer input for next question
-  const answerArea = document.getElementById('answerInput');
-  if (answerArea) {
-    answerArea.value = '';
-  }
   
   updateTimerHint(question.expected_time_seconds);
   updateHintButton(session.hint_available);
@@ -242,34 +270,41 @@ function renderQuestion(question) {
   const promptDiv = document.getElementById('questionPrompt');
   const contextDiv = document.getElementById('questionContext');
   const answerArea = document.getElementById('answerInput');
-  
+
   promptDiv.textContent = question.question || 'Upload a lecture to begin.';
-  
+
+  // Always fully reset both elements first so MCQ->essay (or vice versa)
+  // never leaves stale radio buttons or a hidden textarea behind.
+  contextDiv.innerHTML = '';
+  if (answerArea) {
+    answerArea.value = '';
+    answerArea.style.display = 'none';
+  }
+
   if (questionType === 'mcq') {
-    // Render MCQ options
     const options = question.options || [];
     contextDiv.innerHTML = `
       <div class="mcq-options" id="mcqOptions">
         ${options.map((opt, idx) => `
           <label class="mcq-option">
-            <input type="radio" name="mcq_answer" value="${String.fromCharCode(65 + idx)}">
+            <input type="radio" name="mcq_answer" value="${escapeAttribute(opt)}">
             <span class="option-letter">${String.fromCharCode(65 + idx)}</span>
             <span class="option-text">${escapeHtml(opt)}</span>
           </label>
         `).join('')}
       </div>
     `;
-    // Hide textarea for MCQ
-    if (answerArea) {
-      answerArea.style.display = 'none';
-    }
+    // answerArea stays hidden (already set above)
   } else {
-    // Essay question
-    contextDiv.textContent = question.expected_answer || question.key_points?.join(', ') || 'Answer the question above.';
-    
-    // Show textarea for essay
+    // Essay - clear any leftover MCQ markup and show textarea
+    const keyPoints = question.key_points || [];
+    contextDiv.textContent = keyPoints.length
+      ? `Your answer should address: ${keyPoints.join(', ')}.`
+      : 'Write your answer in the box below.';
+
     if (answerArea) {
       answerArea.style.display = 'block';
+      answerArea.focus();
     }
   }
 }
@@ -313,39 +348,6 @@ function hideConceptGraph() {
   if (conceptSection && conceptSection.querySelector('.concept-list')) {
     conceptSection.style.display = 'none';
   }
-}
-
-function renderConceptGraph(graph, currentConcept, studentModel) {
-  // This function is kept for future use but not called
-  const container = document.getElementById('conceptList');
-  container.innerHTML = '';
-
-  if (!graph.length) {
-    container.innerHTML = '<div class="empty-note">No concept graph yet.</div>';
-    return;
-  }
-
-  graph.forEach((concept) => {
-    const item = document.createElement('div');
-    const state = studentModel[concept.concept] || {};
-    item.className = 'concept-item';
-    if (concept.concept === currentConcept) item.classList.add('active');
-    if (state.mastered) item.classList.add('mastered');
-
-    const deps = (concept.depends_on || []).length
-      ? `Depends on: ${concept.depends_on.join(', ')}`
-      : 'No prerequisites';
-
-    item.innerHTML = `
-      <div class="concept-item-head">
-        <strong>${escapeHtml(concept.concept)}</strong>
-        <span class="concept-difficulty">D${concept.difficulty || '-'}</span>
-      </div>
-      <div class="concept-item-body">${escapeHtml(concept.summary || '')}</div>
-      <div class="concept-item-foot">${escapeHtml(deps)}</div>
-    `;
-    container.appendChild(item);
-  });
 }
 
 function renderThinking(entries) {
@@ -435,7 +437,6 @@ function renderFeedback(session) {
 }
 
 function updateHintButton(hintAvailable) {
-  // Check if hint button exists, if not create it
   let hintBtn = document.getElementById('hintBtn');
   if (!hintBtn) {
     const answerActions = document.querySelector('.answer-actions');
@@ -452,7 +453,6 @@ function updateHintButton(hintAvailable) {
         </svg>
         Get Hint
       `;
-      // Insert before submit button
       answerActions.insertBefore(hintBtn, answerActions.querySelector('.primary'));
     }
   }
@@ -464,10 +464,16 @@ function updateHintButton(hintAvailable) {
 }
 
 async function requestHint() {
+  const sessionId = getSessionId();
+  if (!sessionId) {
+    showNotif('No active session.');
+    return;
+  }
+
   try {
     const data = await apiFetch('/learn/api/session/hint', {
       method: 'POST',
-      body: JSON.stringify({}),
+      body: JSON.stringify({ session_id: sessionId }),
     });
 
     App.hintUsed = true;
@@ -479,8 +485,14 @@ async function requestHint() {
 }
 
 async function submitAnswer() {
+  const sessionId = getSessionId();
+  if (!sessionId) {
+    showNotif('No active session. Please start a new session.');
+    return;
+  }
+
   if (!App.session?.current_question) {
-    showNotif('Start a session first.');
+    showNotif('No question available.');
     return;
   }
 
@@ -511,6 +523,7 @@ async function submitAnswer() {
     const data = await apiFetch('/learn/api/session/answer', {
       method: 'POST',
       body: JSON.stringify({
+        session_id: sessionId,
         answer,
         timeTaken: elapsedSeconds,
         hintUsed: App.hintUsed,
@@ -527,13 +540,26 @@ async function submitAnswer() {
 }
 
 async function refreshSession() {
+  const sessionId = getSessionId();
+  if (!sessionId) {
+    showNotif('No active session.');
+    return;
+  }
+
   try {
-    const data = await apiFetch('/learn/api/session/state');
+    const data = await apiFetch('/learn/api/session/state', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+    
     applySession(data.session);
     setState('stateResults');
     showNotif('Session state refreshed.');
   } catch (error) {
     showNotif(error.message || 'Could not refresh session.');
+    // If session not found, clear it and reset
+    clearSessionId();
+    setState('stateUpload');
   }
 }
 
@@ -542,15 +568,21 @@ async function resetApp() {
     return;
   }
   
-  try {
-    await apiFetch('/learn/api/session/reset', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-  } catch (error) {
-    // Continue with UI reset even if backend fails
+  const sessionId = getSessionId();
+  if (sessionId) {
+    try {
+      await apiFetch('/learn/api/session/reset', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+    } catch (error) {
+      // Continue with reset even if backend fails
+    }
   }
 
+  // Clear session
+  clearSessionId();
+  
   App.procTimers.forEach((timer) => clearTimeout(timer));
   App.procTimers = [];
   App.selectedFile = null;
@@ -567,11 +599,24 @@ async function resetApp() {
 }
 
 async function endSession() {
-  if (!confirm('Are you sure you want to end this session? Your progress will be saved.')) {
+  if (!confirm('Are you sure you want to end this session and return home?')) {
     return;
   }
   
-  // Just redirect to home
+  const sessionId = getSessionId();
+  if (sessionId) {
+    try {
+      await apiFetch('/learn/api/session/reset', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+    } catch (error) {
+      // Ignore errors
+    }
+  }
+  
+  // Clear session and redirect
+  clearSessionId();
   window.location.href = '/';
 }
 
@@ -617,17 +662,37 @@ function escapeAttribute(str) {
   return escapeHtml(str);
 }
 
-// Try to load existing session on page load
+// ═══════════════════════════════════════════════════════════
+//  INITIALIZATION
+// ═══════════════════════════════════════════════════════════
+
 window.addEventListener('load', async () => {
-  try {
-    const data = await apiFetch('/learn/api/session/state');
-    applySession(data.session);
-    setState('stateResults');
-  } catch (error) {
-    // No active session is normal initial state
+  // Check if there's an active session in sessionStorage
+  const sessionId = getSessionId();
+  
+  if (sessionId) {
+    // Try to resume session
+    try {
+      const data = await apiFetch('/learn/api/session/state', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      
+      applySession(data.session);
+      setState('stateResults');
+      console.log('Resumed session:', sessionId);
+    } catch (error) {
+      // Session expired or invalid - clear it
+      console.log('Session not found, starting fresh');
+      clearSessionId();
+      setState('stateUpload');
+    }
+  } else {
+    // No session - start fresh
+    setState('stateUpload');
   }
   
-  // Add end session button if it doesn't exist
+  // Add end session button
   const resultsActions = document.querySelector('.results-actions');
   if (resultsActions && !document.getElementById('endSessionBtn')) {
     const endBtn = document.createElement('button');
