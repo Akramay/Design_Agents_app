@@ -1466,3 +1466,98 @@ body.dark .question-hero {
     justify-content: center;
   }
 }
+/* ══════════════════════════════════════
+   ANSWER FEEDBACK (correct/wrong result)
+══════════════════════════════════════ */
+.answer-result {
+  border-radius: 12px;
+  padding: 14px 16px;
+  border-left: 4px solid transparent;
+  background: var(--surface2);
+}
+
+.answer-result.feedback-correct {
+  border-left-color: var(--success);
+  background: rgba(5, 150, 105, 0.08);
+}
+body.dark .answer-result.feedback-correct {
+  background: rgba(5, 150, 105, 0.12);
+}
+
+.answer-result.feedback-wrong {
+  border-left-color: var(--danger);
+  background: rgba(220, 38, 38, 0.08);
+}
+body.dark .answer-result.feedback-wrong {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+/* Remove the old icon column */
+.result-icon { display: none; }
+
+.result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.result-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.feedback-correct .result-badge { color: var(--success); }
+.feedback-wrong  .result-badge { color: var(--danger); }
+
+.result-message {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.65;
+}
+
+/* Correct answer block shown below feedback message */
+.correct-answer-block {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(91, 79, 207, 0.08);
+  border: 1px solid rgba(91, 79, 207, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 13px;
+}
+body.dark .correct-answer-block {
+  background: rgba(91, 79, 207, 0.15);
+  border-color: rgba(91, 79, 207, 0.3);
+}
+
+.correct-answer-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.correct-answer-text {
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.feedback-waiting {
+  font-size: 13px;
+  color: var(--text3);
+  font-style: italic;
+  padding: 10px 0;
+}
+
+/* Next Question button — inherits .act-btn.primary, just ensure flex */
+#nextQuestionBtn {
+  display: none;
+}

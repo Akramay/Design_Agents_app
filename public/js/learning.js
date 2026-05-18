@@ -318,21 +318,30 @@ function renderFeedbackMessage(session, decision) {
   if (session.last_answer_correct !== null && session.last_answer_correct !== undefined) {
     const correct = session.last_answer_correct;
     const correctClass = correct ? 'feedback-correct' : 'feedback-wrong';
-    const correctIcon = correct 
-      ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
-      : '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     const correctText = correct ? 'CORRECT' : 'WRONG';
     
     const decisionMessage = decision?.message_to_student
       || session.llm_decision?.message_to_student
       || (correct ? 'Good work! Moving forward.' : 'Let\'s review this concept.');
+
+    // Build correct answer block (shown for both correct and wrong answers)
+    const question = session.current_question || session.last_question || {};
+    let correctAnswerHtml = '';
+    if (question.correct_answer) {
+      correctAnswerHtml = `
+        <div class="correct-answer-block">
+          <span class="correct-answer-label">Correct answer:</span>
+          <span class="correct-answer-text">${escapeHtml(question.correct_answer)}</span>
+        </div>
+      `;
+    }
     
     feedbackDiv.innerHTML = `
       <div class="answer-result ${correctClass}">
-        <div class="result-icon">${correctIcon}</div>
         <div class="result-content">
           <div class="result-badge">${correctText}</div>
           <div class="result-message">${escapeHtml(decisionMessage)}</div>
+          ${correctAnswerHtml}
         </div>
       </div>
     `;
@@ -532,13 +541,70 @@ async function submitAnswer() {
       }),
     });
 
-    applySession(data.session, data.decision);
+    // Store next session data but don't advance yet — show feedback + Next Question button
+    App.pendingNextSession = data;
+
+    // Show the feedback for the CURRENT question using the returned session data
+    renderFeedbackMessage(data.session, data.decision);
+    renderFeedback(data.session);
+
+    // Disable answer inputs so student can't re-submit
+    const answerInput = document.getElementById('answerInput');
+    if (answerInput) answerInput.disabled = true;
+    document.querySelectorAll('input[name="mcq_answer"]').forEach(r => r.disabled = true);
+
+    // Hide Submit/Hint buttons and show Next Question button
+    button.style.display = 'none';
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn) hintBtn.style.display = 'none';
+
+    let nextBtn = document.getElementById('nextQuestionBtn');
+    if (!nextBtn) {
+      nextBtn = document.createElement('button');
+      nextBtn.id = 'nextQuestionBtn';
+      nextBtn.className = 'act-btn primary';
+      nextBtn.onclick = advanceToNextQuestion;
+      nextBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+        Next Question
+      `;
+      const answerActions = document.querySelector('.answer-actions');
+      if (answerActions) answerActions.appendChild(nextBtn);
+    }
+    nextBtn.style.display = 'flex';
+
     showNotif('Answer processed by the tutor.');
   } catch (error) {
     showNotif(error.message || 'Could not submit answer.');
-  } finally {
     button.disabled = false;
   }
+}
+
+function advanceToNextQuestion() {
+  if (!App.pendingNextSession) return;
+
+  const { session, decision } = App.pendingNextSession;
+  App.pendingNextSession = null;
+
+  // Re-enable submit button and restore UI
+  const submitBtn = document.getElementById('submitAnswerBtn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.style.display = 'flex';
+  }
+
+  // Hide Next Question button
+  const nextBtn = document.getElementById('nextQuestionBtn');
+  if (nextBtn) nextBtn.style.display = 'none';
+
+  // Re-enable answer inputs
+  const answerInput = document.getElementById('answerInput');
+  if (answerInput) answerInput.disabled = false;
+
+  applySession(session, decision);
 }
 
 async function refreshSession() {
