@@ -147,4 +147,30 @@ router.post('/session/reset', (req, res) => {
   }
 });
 
+router.post('/session/suggest-videos', (req, res) => {
+  try {
+    const { session_id } = req.body || {};
+    const response = runPythonBridge({
+      action: 'suggest_videos',
+      session_id: session_id,
+    });
+    res.status(response.ok ? 200 : 500).json(response);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+router.post('/session/explain', (req, res) => {
+  try {
+    const { session_id } = req.body || {};
+    const response = runPythonBridge({
+      action: 'explain',
+      session_id: session_id,
+    });
+    res.status(response.ok ? 200 : 500).json(response);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 module.exports = router;

@@ -95,8 +95,8 @@
         </button>
       </div>
       <div class="gen-area hidden" id="genArea">
-        <button class="gen-btn" id="genBtn" onclick="startProcessing()">
-          Start Adaptive Session
+        <button class="gen-btn" id="genBtn" onclick="showModeChoiceModal()">
+          Next: Choose an Option
         </button>
       </div>
     </div>
@@ -252,6 +252,45 @@
       </div>
     </div>
   </div>
+
+  <!-- ══ EXPLAIN MODE ════════════════════════════════════ -->
+  <div id="stateExplain" class="state">
+    <div class="results-header">
+      <div>
+        <div class="results-title" id="explainTitle">Lecture Explanation</div>
+        <div class="results-subtitle" id="explainSubtitle">Concepts extracted from your lecture</div>
+      </div>
+      <div class="results-actions">
+        <button class="act-btn" onclick="backToUpload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          New Lecture
+        </button>
+      </div>
+    </div>
+    <div id="explainConceptList" class="explain-concept-list"></div>
+  </div>
+
+  <!-- ══ VIDEOS MODE ══════════════════════════════════════ -->
+  <div id="stateVideos" class="state">
+    <div class="results-header">
+      <div>
+        <div class="results-title" id="videosTitle">Suggested Videos</div>
+        <div class="results-subtitle" id="videosSubtitle">YouTube recommendations per concept</div>
+      </div>
+      <div class="results-actions">
+        <button class="act-btn" onclick="backToUpload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          New Lecture
+        </button>
+      </div>
+    </div>
+    <div id="videoConceptList" class="videos-concept-list"></div>
+  </div>
+
 </div>
 <div class="notif hide" id="notif">
   <div class="notif-icon">
@@ -280,6 +319,50 @@
     <div class="modal-footer">
       <button class="modal-btn secondary" onclick="closeConfirmModal()">Cancel</button>
       <button class="modal-btn danger" id="confirmActionBtn" onclick="executeConfirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mode Choice Modal -->
+<div class="modal-overlay hidden" id="modeChoiceModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">What would you like to do?</div>
+      <button class="modal-close" onclick="closeModeChoiceModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom: 24px; color: var(--text-secondary);">Choose how you want to interact with this lecture:</p>
+      <div style="display: grid; gap: 12px;">
+        <button class="mode-choice-btn" onclick="startAdaptiveSession()">
+          <div class="choice-icon">❓</div>
+          <div class="choice-content">
+            <div class="choice-title">Generate Questions</div>
+            <div class="choice-desc">Get adaptive questions with BKT & IRT based on your knowledge</div>
+          </div>
+          <div class="choice-arrow">→</div>
+        </button>
+        <button class="mode-choice-btn" onclick="startExplainMode()">
+          <div class="choice-icon">💡</div>
+          <div class="choice-content">
+            <div class="choice-title">Explain the Lecture</div>
+            <div class="choice-desc">Get a comprehensive explanation of lecture concepts</div>
+          </div>
+          <div class="choice-arrow">→</div>
+        </button>
+        <button class="mode-choice-btn" onclick="startVideoMode()">
+          <div class="choice-icon">🎥</div>
+          <div class="choice-content">
+            <div class="choice-title">Suggest Videos</div>
+            <div class="choice-desc">Find relevant YouTube videos to supplement your learning</div>
+          </div>
+          <div class="choice-arrow">→</div>
+        </button>
+      </div>
     </div>
   </div>
 </div>

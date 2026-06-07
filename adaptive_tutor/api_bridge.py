@@ -8,7 +8,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta
 
 from blackboard import Blackboard
-from main import build_system
+from main import build_system, YOUTUBE_API_KEY
 
 # Session files directory
 SESSION_DIR = "sessions"
@@ -191,7 +191,82 @@ def _handle_request(payload):
         
         return {"ok": True, "session": _serialize_session(bb, session_id)}
 
-    raise ValueError(f"Unsupported action: {action}")
+    if action == "suggest_videos":
+        session_id = payload.get("session_id")
+        if not session_id:
+            raise RuntimeError("No session_id provided.")
+        
+        session_path = _get_session_path(session_id)
+        if not os.path.exists(session_path):
+            raise RuntimeError("Session expired or not found.")
+        
+        bb = Blackboard(save_path=session_path)
+        if not bb.load():
+            raise RuntimeError("Could not load session.")
+        
+        # Generate video suggestions
+        from video_suggestion_agent import VideoSuggestionAgent
+        video_agent = VideoSuggestionAgent(bb, youtube_api_key=YOUTUBE_API_KEY)
+        perception = video_agent.perceive()
+        decision = video_agent.reason(perception)
+        video_agent.act(decision)
+        bb.save()
+        
+        return {
+            "ok": True,
+            "message": "Video suggestions generated.",
+            "session": _serialize_session(bb, session_id),
+        }
+
+    if action == "explain":
+        session_id = payload.get("session_id")
+        if not session_id:
+            raise RuntimeError("No session_id provided.")
+
+        session_path = _get_session_path(session_id)
+        if not os.path.exists(session_path):
+            raise RuntimeError("Session expired or not found.")
+
+        bb = Blackboard(save_path=session_path)
+        if not bb.load():
+            raise RuntimeError("Could not load session.")
+
+        graph    = bb.read("concept_graph") or []
+        contexts = bb.read("concept_contexts") or {}
+
+        from llm_provider import call_llm, parse_json as _parse_json
+
+        concepts_out = []
+        for node in graph:
+            concept = node.get("concept", "")
+            ctx     = contexts.get(concept, node.get("summary", ""))[:800]
+            try:
+                raw = call_llm(
+                    f"You are a teaching assistant. Explain the concept below in 3-5 clear sentences "
+                    f"suitable for a student who just read the lecture. "
+                    f"Then list 3-5 key points as short bullet phrases.\n\n"
+                    f"Concept: {concept}\n"
+                    f"Lecture context: {ctx}\n\n"
+                    f"Respond ONLY with valid JSON, no markdown, no extra text:\n"
+                    f'{{ "explanation": "...", "key_points": ["...", "..."] }}',
+                    max_tokens=400,
+                )
+                parsed = _parse_json(raw)
+                concepts_out.append({
+                    "concept":    concept,
+                    "explanation": parsed.get("explanation", ctx[:300]),
+                    "key_points":  parsed.get("key_points", []),
+                })
+            except Exception:
+                concepts_out.append({
+                    "concept":    concept,
+                    "explanation": ctx[:300],
+                    "key_points":  [],
+                })
+
+        return {"ok": True, "concepts": concepts_out}
+
+        raise ValueError(f"Unsupported action: {action}")
 
 
 def main():

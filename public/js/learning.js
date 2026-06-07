@@ -103,8 +103,9 @@ function removeFile() {
 }
 
 function setState(id) {
-  ['stateUpload', 'stateProcessing', 'stateResults'].forEach((stateId) => {
-    document.getElementById(stateId).classList.remove('active');
+  ['stateUpload', 'stateProcessing', 'stateResults', 'stateExplain', 'stateVideos'].forEach((stateId) => {
+    const el = document.getElementById(stateId);
+    if (el) el.classList.remove('active');
   });
   document.getElementById(id).classList.add('active');
 }
@@ -712,6 +713,203 @@ async function executeConfirmAction() {
     await App.confirmAction();
   }
   closeConfirmModal();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MODE CHOICE MODAL FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function showModeChoiceModal() {
+  document.getElementById('modeChoiceModal').classList.remove('hidden');
+}
+
+function closeModeChoiceModal() {
+  document.getElementById('modeChoiceModal').classList.add('hidden');
+}
+
+// Shared helper: upload the file, get a session, return data
+async function _uploadLecture() {
+  const base64 = await fileToBase64(App.selectedFile);
+  return apiFetch('/learn/api/session/setup', {
+    method: 'POST',
+    body: JSON.stringify({
+      fileName: App.selectedFile.name,
+      fileData: base64,
+    }),
+  });
+}
+
+// ── Quiz mode (unchanged behaviour) ─────────────────────────────────────
+async function startAdaptiveSession() {
+  closeModeChoiceModal();
+  startProcessing();   // existing function handles everything
+}
+
+// ── Explain mode ─────────────────────────────────────────────────────────
+async function startExplainMode() {
+  closeModeChoiceModal();
+
+  if (!App.selectedFile) { showNotif('Choose a lecture file first.'); return; }
+
+  const button = document.getElementById('genBtn');
+  button.disabled = true;
+  setState('stateProcessing');
+  resetProcessingAnimation();
+  runProcessingAnimation();
+
+  try {
+    // Parse the lecture via the normal setup endpoint so the session exists
+    const data = await _uploadLecture();
+    setSessionId(data.session_id);
+
+    // Now call the dedicated explain endpoint
+    const explainData = await apiFetch('/learn/api/session/explain', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: data.session_id }),
+    });
+
+    renderExplainPage(explainData.concepts || [], App.selectedFile.name);
+    setState('stateExplain');
+    showNotif('Lecture explanation ready.');
+  } catch (error) {
+    setState('stateUpload');
+    showNotif(error.message || 'Could not load explanation.');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function renderExplainPage(concepts, lectureTitle) {
+  document.getElementById('explainTitle').textContent =
+    lectureTitle || 'Lecture Explanation';
+  document.getElementById('explainSubtitle').textContent =
+    concepts.length + ' concept' + (concepts.length !== 1 ? 's' : '') + ' extracted';
+
+  const list = document.getElementById('explainConceptList');
+  if (!concepts.length) {
+    list.innerHTML = '<div class="empty-note">No concepts were extracted from this lecture.</div>';
+    return;
+  }
+
+  list.innerHTML = concepts.map((c) => `
+    <div class="explain-card">
+      <div class="explain-concept-name">${escapeHtml(c.concept)}</div>
+      <div class="explain-concept-body">${escapeHtml(c.explanation || c.summary || '')}</div>
+      ${(c.key_points && c.key_points.length) ? `
+        <ul class="explain-key-points">
+          ${c.key_points.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}
+        </ul>` : ''}
+    </div>
+  `).join('');
+}
+
+// ── Video mode ───────────────────────────────────────────────────────────
+async function startVideoMode() {
+  closeModeChoiceModal();
+
+  if (!App.selectedFile) { showNotif('Choose a lecture file first.'); return; }
+
+  const button = document.getElementById('genBtn');
+  button.disabled = true;
+  setState('stateProcessing');
+  resetProcessingAnimation();
+  runProcessingAnimation();
+
+  try {
+    // Step 1: parse the lecture
+    const setupData = await _uploadLecture();
+    setSessionId(setupData.session_id);
+
+    // Step 2: get per-concept video suggestions
+    const videoData = await apiFetch('/learn/api/session/suggest-videos', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: setupData.session_id }),
+    });
+
+    renderVideosPage(
+      videoData.concepts || setupData.session.concept_graph || [],
+      videoData.session ? videoData.session.videos : [],
+      App.selectedFile.name
+    );
+    setState('stateVideos');
+    showNotif('Video suggestions ready.');
+  } catch (error) {
+    setState('stateUpload');
+    showNotif(error.message || 'Could not load video suggestions.');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function renderVideosPage(concepts, flatVideos, lectureTitle) {
+  document.getElementById('videosTitle').textContent =
+    lectureTitle || 'Suggested Videos';
+
+  const list = document.getElementById('videoConceptList');
+
+  // The video_suggestion_agent returns a flat list (all videos on session.videos).
+  // If the new per-concept format is available (videoData.concepts), prefer it.
+  if (concepts.length && concepts[0] && concepts[0].videos) {
+    // Per-concept format from updated suggest_videos action
+    document.getElementById('videosSubtitle').textContent =
+      'Recommendations for ' + concepts.length + ' concept' + (concepts.length !== 1 ? 's' : '');
+
+    list.innerHTML = concepts.map((c) => `
+      <div class="videos-concept-block">
+        <div class="videos-concept-name">${escapeHtml(c.concept)}</div>
+        <div class="videos-grid">
+          ${(c.videos || []).map((v) => renderVideoCard(v)).join('')}
+        </div>
+      </div>
+    `).join('');
+  } else {
+    // Flat list fallback (original VideoSuggestionAgent output)
+    document.getElementById('videosSubtitle').textContent =
+      flatVideos.length + ' video' + (flatVideos.length !== 1 ? 's' : '') + ' suggested';
+
+    if (!flatVideos.length) {
+      list.innerHTML = '<div class="empty-note">No videos found. Add a YouTube API key in your .env file for real results.</div>';
+      return;
+    }
+    list.innerHTML = `
+      <div class="videos-concept-block">
+        <div class="videos-concept-name">All Concepts</div>
+        <div class="videos-grid">
+          ${flatVideos.map((v) => renderVideoCard(v)).join('')}
+        </div>
+      </div>`;
+  }
+}
+
+function renderVideoCard(v) {
+  const thumb = v.thumbnail
+    ? `<img class="video-thumb" src="${escapeAttribute(v.thumbnail)}" alt="">`
+    : `<div class="video-thumb-placeholder">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+           <polygon points="23 7 16 12 23 17 23 7"/>
+           <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+         </svg>
+       </div>`;
+  return `
+    <a class="video-card-standalone" href="${escapeAttribute(v.url || '#')}"
+       target="_blank" rel="noreferrer">
+      ${thumb}
+      <div class="video-card-info">
+        <div class="video-card-title">${escapeHtml(v.title || 'Watch video')}</div>
+        <div class="video-card-channel">${escapeHtml(v.channel || 'YouTube')}</div>
+      </div>
+    </a>`;
+}
+
+// Shared back-to-upload for explain + videos pages
+function backToUpload() {
+  clearSessionId();
+  App.selectedFile = null;
+  App.session = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').classList.add('hidden');
+  document.getElementById('genArea').classList.add('hidden');
+  setState('stateUpload');
 }
 
 function updateTimerHint(expectedSeconds) {

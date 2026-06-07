@@ -53,6 +53,11 @@ class OrchestratorAgent(BaseAgent):
 
         self.blackboard.clear_thinking()
         self.blackboard.write("file_path", file_path)
+        
+        # Extract and store lecture title from file path
+        import os
+        lecture_title = os.path.basename(file_path)
+        self.blackboard.write("lecture_title", lecture_title)
 
         # Initialize question history tracking
         self.blackboard.write("asked_questions", [])
