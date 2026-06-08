@@ -818,6 +818,68 @@ body.dark .q-type-pill.short { background: #022c22; color: #34d399; }
   transition: all .2s;
   user-select: none;
 }
+
+.mcq-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mcq-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.mcq-option:hover {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.mcq-option input[type="radio"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+}
+
+.mcq-option .option-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.mcq-option .option-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mcq-option:has(input:checked) {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #6366f1;
+}
+
+.mcq-option:has(input:checked) .option-letter {
+  background: #6366f1;
+  color: #fff;
+}
 .opt:hover { border-color: var(--accent); background: var(--accent-soft); }
 
 .opt-letter {
