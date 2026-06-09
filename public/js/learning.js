@@ -110,6 +110,17 @@ function setState(id) {
   document.getElementById(id).classList.add('active');
 }
 
+function setProcessingStatus(text) {
+  const statusEl = document.getElementById('processingStatus');
+  if (statusEl) {
+    statusEl.textContent = text;
+  }
+}
+
+function clearProcessingStatus() {
+  setProcessingStatus('');
+}
+
 function resetProcessingAnimation() {
   App.procTimers.forEach((timer) => clearTimeout(timer));
   App.procTimers = [];
@@ -165,6 +176,9 @@ async function fileToBase64(file) {
 }
 
 async function apiFetch(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  console.log(`[UI] Request ${method} ${url}`, options.body ? JSON.parse(options.body) : undefined);
+
   const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
@@ -173,9 +187,31 @@ async function apiFetch(url, options = {}) {
     ...options,
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (jsonError) {
+    const text = await response.text();
+    const message = response.ok
+      ? 'Unexpected response format from server.'
+      : 'Server error: invalid response format.';
+    const error = new Error(message);
+    error.terminal = text;
+    error.operation = null;
+    throw error;
+  }
+
+  console.log(`[UI] Response ${method} ${url}`, data);
+
   if (!response.ok || !data.ok) {
-    throw new Error(data.error || 'Request failed.');
+    const message = data.user_message || data.error || 'Request failed. Please try again.';
+    const error = new Error(message);
+    error.terminal = data.error || message;
+    error.code = data.error_code || null;
+    error.operation = data.operation || null;
+    error.source = data.source || null;
+    error.provider = data.provider || null;
+    throw error;
   }
 
   return data;
@@ -192,6 +228,7 @@ async function startProcessing() {
   setState('stateProcessing');
   resetProcessingAnimation();
   runProcessingAnimation();
+  setProcessingStatus('Uploading lecture file and starting backend parsing...');
 
   try {
     const base64 = await fileToBase64(App.selectedFile);
@@ -205,7 +242,6 @@ async function startProcessing() {
 
     // Store the new session ID
     setSessionId(data.session_id);
-    
     applySession(data.session, data.decision);
     setState('stateResults');
     showNotif('Adaptive session is ready.');
@@ -214,6 +250,7 @@ async function startProcessing() {
     showNotif(error.message || 'Could not start the session.');
   } finally {
     button.disabled = false;
+    clearProcessingStatus();
   }
 }
 
@@ -320,23 +357,21 @@ function renderFeedbackMessage(session, decision) {
     const correct = session.last_answer_correct;
     const correctClass = correct ? 'feedback-correct' : 'feedback-wrong';
     const correctText = correct ? 'CORRECT' : 'WRONG';
-    
-    const decisionMessage = decision?.message_to_student
-      || session.llm_decision?.message_to_student
-      || (correct ? 'Good work! Moving forward.' : 'Let\'s review this concept.');
 
-    // Build correct answer block (shown for both correct and wrong answers)
-    const question = session.current_question || session.last_question || {};
-    let correctAnswerHtml = '';
-    if (question.correct_answer) {
-      correctAnswerHtml = `
+    const question = session.last_question || session.current_question || {};
+    const correctAnswerHtml = !correct && question.correct_answer
+      ? `
         <div class="correct-answer-block">
           <span class="correct-answer-label">Correct answer:</span>
           <span class="correct-answer-text">${escapeHtml(question.correct_answer)}</span>
         </div>
-      `;
-    }
-    
+      `
+      : '';
+
+    const decisionMessage = decision?.message_to_student
+      || session.llm_decision?.message_to_student
+      || (correct ? 'Good work! That answer matches the hidden solution.' : 'That answer is incorrect. The correct choice is shown below.');
+
     feedbackDiv.innerHTML = `
       <div class="answer-result ${correctClass}">
         <div class="result-content">
@@ -759,10 +794,12 @@ async function startExplainMode() {
 
   try {
     // Parse the lecture via the normal setup endpoint so the session exists
+    setProcessingStatus('Parsing lecture content for explanation...');
     const data = await _uploadLecture();
     setSessionId(data.session_id);
 
     // Now call the dedicated explain endpoint
+    setProcessingStatus('Requesting explanation from the assistant...');
     const explainData = await apiFetch('/learn/api/session/explain', {
       method: 'POST',
       body: JSON.stringify({ session_id: data.session_id }),
@@ -776,8 +813,10 @@ async function startExplainMode() {
     showNotif(error.message || 'Could not load explanation.');
   } finally {
     button.disabled = false;
+    clearProcessingStatus();
   }
 }
+
 
 function renderExplainPage(concepts, lectureTitle) {
   document.getElementById('explainTitle').textContent =
@@ -817,10 +856,12 @@ async function startVideoMode() {
 
   try {
     // Step 1: parse the lecture
+    setProcessingStatus('Parsing lecture content for video suggestions...');
     const setupData = await _uploadLecture();
     setSessionId(setupData.session_id);
 
     // Step 2: get per-concept video suggestions
+    setProcessingStatus('Requesting video recommendations from the assistant...');
     const videoData = await apiFetch('/learn/api/session/suggest-videos', {
       method: 'POST',
       body: JSON.stringify({ session_id: setupData.session_id }),
@@ -838,8 +879,10 @@ async function startVideoMode() {
     showNotif(error.message || 'Could not load video suggestions.');
   } finally {
     button.disabled = false;
+    clearProcessingStatus();
   }
 }
+
 
 function renderVideosPage(concepts, flatVideos, lectureTitle) {
   document.getElementById('videosTitle').textContent =

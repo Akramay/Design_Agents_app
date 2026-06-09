@@ -64,6 +64,7 @@ def _serialize_session(bb, session_id):
         "current_concept": current_concept,
         "current_summary": current_summary,
         "current_question": bb.read("current_question"),
+        "last_question": bb.read("last_question"),
         "current_concept_state": current_state,
         "concept_graph": graph,
         "student_model": model,

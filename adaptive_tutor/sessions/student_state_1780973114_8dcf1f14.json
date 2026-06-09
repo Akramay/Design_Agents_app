@@ -1,0 +1,242 @@
+{
+  "file_path": "D:\\University_files\\Courses\\Mobile_programming\\Project\\Design_Agents_app\\uploads\\1780973109974-ML_Study_Guide.pdf",
+  "student_id": "student_001",
+  "lecture_text": null,
+  "concept_graph": [
+    {
+      "concept": "Machine Learning",
+      "difficulty": 1,
+      "depends_on": [],
+      "summary": "Machine learning has 3 main types: Supervised Learning, Unsupervised Learning, and Reinforcement Learning. Machine learning is a subset of AI, where machines learn from data without being explicitly programmed for every task. It is a field that enables machines to simulate human intelligence."
+    },
+    {
+      "concept": "Artificial Intelligence",
+      "difficulty": 1,
+      "depends_on": [],
+      "summary": "Artificial Intelligence is the broadest field, which includes any technique that makes machines simulate human intelligence. AI is a superset of Machine Learning and Deep Learning. It is the primary field that encompasses various techniques to make machines intelligent."
+    },
+    {
+      "concept": "Supervised Learning",
+      "difficulty": 2,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Supervised Learning is a type of Machine Learning where the model is trained on a labeled dataset, and it learns to predict outputs for new unseen inputs. The model learns a mapping f(X)\u2192Y and uses it to predict outputs. Two main tasks in Supervised Learning are Classification and Regression."
+    },
+    {
+      "concept": "Unsupervised Learning",
+      "difficulty": 2,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Unsupervised Learning is a type of Machine Learning where the model is trained on unlabeled data, and it must discover hidden patterns, structures, or groupings on its own. Common tasks in Unsupervised Learning include Clustering, Dimensionality Reduction, and Association. The model groups similar items or compresses features without labeled data."
+    },
+    {
+      "concept": "Reinforcement Learning",
+      "difficulty": 3,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Reinforcement Learning is a type of Machine Learning where an agent learns to make decisions by interacting with an environment. It receives a reward for good actions and a penalty for bad ones, and the goal is to maximize total reward over time. The agent learns which strategies lead to winning without labeled data."
+    },
+    {
+      "concept": "Classification",
+      "difficulty": 3,
+      "depends_on": [
+        "Supervised Learning"
+      ],
+      "summary": "Classification is a task in Supervised Learning where the model predicts a discrete category. It is used in problems such as spam detection, where the input is email text and the label is spam or not spam. The model learns from thousands of labeled examples to predict outputs for new inputs."
+    },
+    {
+      "concept": "Overfitting",
+      "difficulty": 4,
+      "depends_on": [
+        "Machine Learning",
+        "Supervised Learning"
+      ],
+      "summary": "Overfitting happens when a model learns the training data too well, including its noise and random fluctuations. The result is a very low training error but a very high test/validation error, and the model fails to generalize to new data. Overfitting is caused by a model that is too complex or has too many features."
+    }
+  ],
+  "current_concept": "Machine Learning",
+  "student_model": {
+    "Machine Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.25,
+      "bkt_p_slip": 0.05,
+      "bkt_p_guess": 0.25,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": -1.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Artificial Intelligence": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.25,
+      "bkt_p_slip": 0.05,
+      "bkt_p_guess": 0.25,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": -1.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Supervised Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.2,
+      "bkt_p_slip": 0.08,
+      "bkt_p_guess": 0.22,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": -0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Unsupervised Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.2,
+      "bkt_p_slip": 0.08,
+      "bkt_p_guess": 0.22,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": -0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Reinforcement Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.17,
+      "bkt_p_slip": 0.1,
+      "bkt_p_guess": 0.2,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Classification": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.17,
+      "bkt_p_slip": 0.1,
+      "bkt_p_guess": 0.2,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Overfitting": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.13,
+      "bkt_p_slip": 0.12,
+      "bkt_p_guess": 0.18,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    }
+  },
+  "last_answer_text": null,
+  "last_answer_correct": null,
+  "last_time_taken": null,
+  "last_time_ratio": null,
+  "last_question": null,
+  "current_question": {
+    "question": "Define Overfitting and Underfitting in the context of Machine Learning, and explain how they relate to Bias and Variance.",
+    "expected_answer": "Overfitting occurs when a model is too complex and performs well on the training data but poorly on new data. Underfitting happens when a model is too simple and fails to capture the underlying patterns in the data. Both overfitting and underfitting are related to Bias and Variance, where bias refers to the error introduced by simplifying a model, and variance refers to the error introduced by the complexity of the model. A good model should balance bias and variance to achieve optimal performance.",
+    "key_points": [
+      "Overfitting",
+      "Underfitting",
+      "Bias",
+      "Variance",
+      "Train-Test Split"
+    ],
+    "expected_time_seconds": 25,
+    "concept": "Machine Learning",
+    "b": -1.5,
+    "difficulty": "easy \u2014 identify or recognize which concept applies",
+    "type": "essay"
+  },
+  "asked_questions": [
+    {
+      "concept": "Machine Learning",
+      "type": "essay",
+      "text_hash": "fdb79e18b336e2c9272deb372ba2e791",
+      "keywords": [
+        "bias",
+        "context",
+        "define",
+        "explain",
+        "learning",
+        "machine",
+        "overfitting",
+        "relate"
+      ]
+    }
+  ],
+  "hint_available": true,
+  "hint_used_current_question": false,
+  "llm_decision": null,
+  "agent_thinking": [
+    {
+      "agent": "Orchestrator",
+      "message": "New session started. Asking ParserAgent to analyze the lecture...",
+      "timestamp": "05:45:14"
+    },
+    {
+      "agent": "ParserAgent",
+      "message": "I see a lecture file at: D:\\University_files\\Courses\\Mobile_programming\\Project\\Design_Agents_app\\uploads\\1780973109974-ML_Study_Guide.pdf. I will extract its concepts.",
+      "timestamp": "05:45:14"
+    },
+    {
+      "agent": "ParserAgent",
+      "message": "Extracted 25753 characters. Splitting into slides...",
+      "timestamp": "05:45:14"
+    },
+    {
+      "agent": "ParserAgent",
+      "message": "NLP found 20 candidate concepts: ['the model', 'study guide 4th year', 'precision recall', 'model too', 'type supervised task classification']...",
+      "timestamp": "05:45:14"
+    },
+    {
+      "agent": "ParserAgent",
+      "message": "Concept graph ready. Found 7 concepts with per-concept contexts. Starting with: 'Machine Learning' (easiest first).",
+      "timestamp": "05:45:17"
+    },
+    {
+      "agent": "Orchestrator",
+      "message": "Student model initialized for 7 concepts. Generating first question...",
+      "timestamp": "05:45:17"
+    },
+    {
+      "agent": "QuestionAgent",
+      "message": "Generated essay question for 'Machine Learning' (b=-1.5)",
+      "timestamp": "05:45:18"
+    }
+  ],
+  "next_b": -1.5,
+  "hint": null,
+  "explanation": null,
+  "videos": [],
+  "session_started": "2026-06-09T05:45:14.053732",
+  "total_questions": 0,
+  "total_correct": 0,
+  "lecture_title": "1780973109974-ML_Study_Guide.pdf",
+  "concept_contexts": {
+    "Machine Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Artificial Intelligence": "Page 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of ML \u00b7 AI vs ML vs DL \u00b7 Learning paradigms \u00b7 Overfitting \u00b7 Bias-Variance \u00b7 Train-Test Split\nQ1. What are the types of machine learning?\nMachine learning has 3 main types:\n1. Supervised Learning \u2014 model learns from labeled data (input + correct output given). Goal: learn a\nmapping f(X)\u2192Y.\n2. Unsupervised Learning \u2014 model finds patterns in unlabeled data on its own. No correct answers\nprovided.\n3. Reinforcement Learning \u2014 an agent learns by trial and error, receiving rewards for good actions and\npenalties for bad ones.\nExample: Think of it like school: Supervised = teacher gives you answers. Unsupervised = you figure out\npatterns yourself. Reinforcement = you learn by playing a game and getting points.\nQ2. What is the dif",
+    "Supervised Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Unsupervised Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Reinforcement Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Classification": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Overfitting": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M"
+  }
+}

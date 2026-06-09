@@ -1,0 +1,279 @@
+{
+  "file_path": "D:\\University_files\\Courses\\Mobile_programming\\Project\\Design_Agents_app\\uploads\\1780973316769-ML_Study_Guide.pdf",
+  "student_id": "student_001",
+  "lecture_text": null,
+  "concept_graph": [
+    {
+      "concept": "Artificial Intelligence",
+      "difficulty": 1,
+      "depends_on": [],
+      "summary": "Artificial Intelligence (AI) is the broadest field, encompassing any technique that makes machines simulate human intelligence. AI is a subset that includes Machine Learning and Deep Learning."
+    },
+    {
+      "concept": "Machine Learning",
+      "difficulty": 2,
+      "depends_on": [
+        "Artificial Intelligence"
+      ],
+      "summary": "Machine Learning (ML) is a subset of AI, where machines learn from data without being explicitly programmed for every task. ML uses data to learn and improve its performance on a task."
+    },
+    {
+      "concept": "Supervised Learning",
+      "difficulty": 3,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Supervised Learning is a type of ML where the model is trained on a labeled dataset, where every input has a known correct output. The model learns to predict outputs for new unseen inputs, and includes tasks such as classification and regression."
+    },
+    {
+      "concept": "Unsupervised Learning",
+      "difficulty": 3,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Unsupervised Learning is a type of ML where the model is trained on unlabeled data, with no correct answers given. The model must discover hidden patterns, structures, or groupings on its own, and includes tasks such as clustering and dimensionality reduction."
+    },
+    {
+      "concept": "Reinforcement Learning",
+      "difficulty": 4,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Reinforcement Learning is a type of ML where an agent learns to make decisions by interacting with an environment, receiving a reward for good actions and a penalty for bad ones. The goal is to maximize total reward over time."
+    },
+    {
+      "concept": "Overfitting",
+      "difficulty": 4,
+      "depends_on": [
+        "Machine Learning",
+        "Supervised Learning"
+      ],
+      "summary": "Overfitting happens when a model learns the training data too well, including its noise and random fluctuations, resulting in very low training error but very high test/validation error. Overfitting causes a model to fail to generalize to new data."
+    },
+    {
+      "concept": "Deep Learning",
+      "difficulty": 5,
+      "depends_on": [
+        "Machine Learning"
+      ],
+      "summary": "Deep Learning is a subset of ML, using multi-layered neural networks to automatically learn complex patterns. Deep Learning is a type of ML that is used for tasks such as face recognition and natural language processing."
+    }
+  ],
+  "current_concept": "Artificial Intelligence",
+  "student_model": {
+    "Artificial Intelligence": {
+      "bkt_p_learned": 0.26677663340843255,
+      "bkt_p_transit": 0.25,
+      "bkt_p_slip": 0.05,
+      "bkt_p_guess": 0.25,
+      "mastered": false,
+      "irt_theta": -0.4250657257332212,
+      "irt_b_current": -1.0,
+      "attempts": 2,
+      "history": [
+        "wrong",
+        "wrong"
+      ],
+      "correct_streak": 0
+    },
+    "Machine Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.2,
+      "bkt_p_slip": 0.08,
+      "bkt_p_guess": 0.22,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": -0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Supervised Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.17,
+      "bkt_p_slip": 0.1,
+      "bkt_p_guess": 0.2,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Unsupervised Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.17,
+      "bkt_p_slip": 0.1,
+      "bkt_p_guess": 0.2,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Reinforcement Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.13,
+      "bkt_p_slip": 0.12,
+      "bkt_p_guess": 0.18,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Overfitting": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.13,
+      "bkt_p_slip": 0.12,
+      "bkt_p_guess": 0.18,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Deep Learning": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.1,
+      "bkt_p_slip": 0.15,
+      "bkt_p_guess": 0.15,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 1.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    }
+  },
+  "last_answer_text": "Supervised learning model learns from labeled data, with the goal of learning a mapping f(X)\u00e2\u2020\u2019Y.",
+  "last_answer_correct": false,
+  "last_time_taken": 8.0,
+  "last_time_ratio": 0.26666666666666666,
+  "last_question": {
+    "question": "How does supervised learning work?",
+    "options": [
+      "Supervised learning model learns by trial and error, receiving rewards for good actions and penalties for bad ones.",
+      "Supervised learning model is not one of the three main types of machine learning.",
+      "Supervised learning model finds patterns in unlabeled data on its own.",
+      "Supervised learning model learns from labeled data, with the goal of learning a mapping f(X)\u2192Y."
+    ],
+    "correct_answer": "Supervised learning model learns from labeled data, with the goal of learning a mapping f(X)\u2192Y.",
+    "explanation": "Machine learning has 3 main types: 1. Supervised Learning \u2014 model learns from labeled data.",
+    "key_points": [
+      "Artificial Intelligence"
+    ],
+    "expected_time_seconds": 30,
+    "concept": "Artificial Intelligence",
+    "b": -1.0,
+    "difficulty": "easy-medium \u2014 explain what it is and why it matters",
+    "type": "mcq"
+  },
+  "current_question": {
+    "question": "How does Unsupervised Learning work?",
+    "options": [
+      "Unsupervised Learning is a type of machine learning where the model finds patterns in unlabeled data on its own.",
+      "Unsupervised Learning is a type of machine learning where the model learns from labeled data and receives rewards for good actions.",
+      "Unsupervised Learning is a type of machine learning where the model learns by trial and error, receiving penalties for bad actions only.",
+      "Unsupervised Learning is a type of machine learning where the model learns a mapping f(X)\u2192Y from the teacher."
+    ],
+    "correct_answer": "Unsupervised Learning is a type of machine learning where the model finds patterns in unlabeled data on its own.",
+    "explanation": "Unsupervised Learning \u2014 model finds patterns in unlabeled data on its own.",
+    "key_points": [
+      "Artificial Intelligence"
+    ],
+    "expected_time_seconds": 30,
+    "concept": "Artificial Intelligence",
+    "b": -1.0,
+    "difficulty": "easy-medium \u2014 explain what it is and why it matters",
+    "type": "mcq"
+  },
+  "asked_questions": [
+    {
+      "concept": "Artificial Intelligence",
+      "type": "mcq",
+      "text_hash": "9f4a7801692031e7ea448c59cdb7a5b6",
+      "keywords": [
+        "learning",
+        "supervised"
+      ]
+    },
+    {
+      "concept": "Artificial Intelligence",
+      "type": "mcq",
+      "text_hash": "809d2b3c2cd522eed0625f91cd69396a",
+      "keywords": [
+        "does",
+        "learning",
+        "supervised",
+        "work"
+      ]
+    },
+    {
+      "concept": "Artificial Intelligence",
+      "type": "mcq",
+      "text_hash": "77de46ed9a77935a589df480bb0690ad",
+      "keywords": [
+        "does",
+        "learning",
+        "unsupervised",
+        "work"
+      ]
+    }
+  ],
+  "hint_available": true,
+  "hint_used_current_question": false,
+  "llm_decision": {
+    "reasoning": "The student has not truly learned this concept with a BKT of 0.267, indicating they are still uncertain. The time ratio of 0.27x expected time and no hint usage suggests a potential lucky guess rather than genuine understanding. Given the student's recent history of wrong answers and low BKT, a decrease in difficulty or additional support is necessary.",
+    "action": "SHOW_EXPLANATION",
+    "message_to_student": "Don't worry about the wrong answer, let's break down the concept together to help you understand it better. Here's a detailed explanation to get you back on track."
+  },
+  "agent_thinking": [
+    {
+      "agent": "Orchestrator",
+      "message": "Answer graded: WRONG \u2717. Time ratio: 0.27x. Running BKT and IRT updates...",
+      "timestamp": "05:49:31"
+    },
+    {
+      "agent": "BKTAgent",
+      "message": "P(learned) for 'Artificial Intelligence': 0.256 -> 0.267. needs more evidence.",
+      "timestamp": "05:49:31"
+    },
+    {
+      "agent": "IRTAgent",
+      "message": "\u03b8 updated: -0.219 \u2192 -0.425 (\u25bc down). Next question difficulty: b=-1.0 (P(correct)\u22480.64). Student level: Average \u2014 solid foundation",
+      "timestamp": "05:49:31"
+    },
+    {
+      "agent": "Orchestrator",
+      "message": "LLM Decision: SHOW_EXPLANATION. Reasoning: The student has not truly learned this concept with a BKT of 0.267, indicating they are still uncertain. The time ratio of 0.27x expected time and no hint usage suggests a potential lucky guess rather than genuine understanding. Given the student's recent history of wrong answers and low BKT, a decrease in difficulty or additional support is necessary.",
+      "timestamp": "05:49:33"
+    },
+    {
+      "agent": "QuestionAgent",
+      "message": "Generated mcq question for 'Artificial Intelligence' (b=-1.0)",
+      "timestamp": "05:49:36"
+    }
+  ],
+  "next_b": -1.0,
+  "hint": null,
+  "explanation": null,
+  "videos": [],
+  "session_started": "2026-06-09T05:48:40.908661",
+  "total_questions": 2,
+  "total_correct": 0,
+  "lecture_title": "1780973316769-ML_Study_Guide.pdf",
+  "concept_contexts": {
+    "Artificial Intelligence": "Page 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of ML \u00b7 AI vs ML vs DL \u00b7 Learning paradigms \u00b7 Overfitting \u00b7 Bias-Variance \u00b7 Train-Test Split\nQ1. What are the types of machine learning?\nMachine learning has 3 main types:\n1. Supervised Learning \u2014 model learns from labeled data (input + correct output given). Goal: learn a\nmapping f(X)\u2192Y.\n2. Unsupervised Learning \u2014 model finds patterns in unlabeled data on its own. No correct answers\nprovided.\n3. Reinforcement Learning \u2014 an agent learns by trial and error, receiving rewards for good actions and\npenalties for bad ones.\nExample: Think of it like school: Supervised = teacher gives you answers. Unsupervised = you figure out\npatterns yourself. Reinforcement = you learn by playing a game and getting points.\nQ2. What is the dif",
+    "Machine Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Supervised Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Unsupervised Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Reinforcement Learning": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Overfitting": "Page 1\nML Study Guide \u00b7 4th Year AI\nMachine Learning\nComplete Study Guide\n4th Year AI Student \u2014 Graduation Preparation\nSections: ML Fundamentals \u00b7 Algorithms & Models \u00b7 Data Processing &\nEvaluation\nTable of Contents\nSection\nTopics\nColor\n1 \u00b7 ML Fundamentals\nTypes of ML, AI vs ML vs DL, Supervised, Unsupervised,\nReinforcement, Overfitting, Underfitting, Bias & Variance,\nTrain-Test Split\nGreen\n2 \u00b7 Algorithms & Models\nLinear Reg, Logistic Reg, Classification vs Regression,\nDecision Tree, Random Forest, KNN, SVM, Naive Bayes,\nK-Means, PCA\nOrange\n3 \u00b7 Data Processing &\nEvaluation\nPreprocessing, \nFeature \nEngineering, \nMissing \nValues,\nNormalization, Standardization, Accuracy, Precision, Recall,\nF1, Confusion Matrix\nPurple\n\nPage 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of M",
+    "Deep Learning": "Page 2\nML Study Guide \u00b7 4th Year AI\nSection 1 \u00b7 ML Fundamentals\nTypes of ML \u00b7 AI vs ML vs DL \u00b7 Learning paradigms \u00b7 Overfitting \u00b7 Bias-Variance \u00b7 Train-Test Split\nQ1. What are the types of machine learning?\nMachine learning has 3 main types:\n1. Supervised Learning \u2014 model learns from labeled data (input + correct output given). Goal: learn a\nmapping f(X)\u2192Y.\n2. Unsupervised Learning \u2014 model finds patterns in unlabeled data on its own. No correct answers\nprovided.\n3. Reinforcement Learning \u2014 an agent learns by trial and error, receiving rewards for good actions and\npenalties for bad ones.\nExample: Think of it like school: Supervised = teacher gives you answers. Unsupervised = you figure out\npatterns yourself. Reinforcement = you learn by playing a game and getting points.\nQ2. What is the dif"
+  },
+  "bkt_mastered": false
+}

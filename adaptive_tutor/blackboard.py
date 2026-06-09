@@ -34,6 +34,7 @@ class Blackboard:
             "last_answer_correct":  None,   # True / False
             "last_time_taken":      None,   # seconds
             "last_time_ratio":      None,   # actual / expected
+            "last_question":        None,   # previous question data for feedback
 
             # ── written by: QuestionAgent ────────────────
             "current_question":     None,   # full question dict

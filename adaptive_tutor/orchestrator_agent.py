@@ -120,43 +120,55 @@ class OrchestratorAgent(BaseAgent):
     # ══════════════════════════════════════════════════════════
 
     def process_answer(self, answer_text: str, time_taken: float, hint_used: bool = False) -> dict:
-        print(f"\n{'═'*55}")
-        print(f"  ORCHESTRATOR: Processing student answer")
-        print(f"  Answer: \"{answer_text[:80]}...\"")
-        print(f"  Time  : {time_taken:.1f}s  |  Hint used: {hint_used}")
-        print(f"{'═'*55}")
+        print(f"\n{'═'*70}")
+        print(f"  [ORCHESTRATOR-ANSWER-FLOW] 📥 ANSWER SUBMISSION RECEIVED")
+        print(f"  {'═'*70}")
+        print(f"  Student's answer: \"{answer_text[:70]}...\"")
+        print(f"  Time taken: {time_taken:.1f}s | Hint used: {hint_used}")
 
         self.blackboard.clear_thinking()
 
         concept  = self.blackboard.read("current_concept")
         question = self.blackboard.read("current_question")
         model    = self.blackboard.read("student_model")
+        self.blackboard.write("last_question", question)
+        question_type = question.get("type", "essay")
+
+        print(f"  Question type: {question_type.upper()}")
+        print(f"  Current concept: {concept}")
 
         # Step 1: Grade
-        print(f"\n  [Orchestrator] Step 1: Grading answer...")
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] 🔍 STEP 1: GRADING ANSWER")
+        if question_type == "mcq":
+            print(f"  → MCQ detected: Grading INSTANTLY (no LLM call needed)")
+        else:
+            print(f"  → Essay detected: Grading using comparison logic")
         correct = self._grade_answer(answer_text, question)
 
         # Step 2: Time ratio
         expected_time = question.get("expected_time_seconds", 30)
         time_ratio    = time_taken / max(expected_time, 1)
 
-        print(f"\n  [Orchestrator] Step 2: Time analysis:")
-        print(f"  Expected: {expected_time}s  |  Actual: {time_taken:.1f}s  |  Ratio: {time_ratio:.2f}x", end="")
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] ⏱️  STEP 2: TIME ANALYSIS")
+        print(f"  Expected time: {expected_time}s | Actual: {time_taken:.1f}s | Ratio: {time_ratio:.2f}x", end="")
         if time_ratio < 0.4:
-            print(" ← Very fast (possible lucky guess)")
+            print(" → Very fast (lucky guess?)")
         elif time_ratio < 1.5:
-            print(" ← Normal thinking time")
+            print(" → Normal thinking time")
         elif time_ratio < 2.5:
-            print(" ← Slow — student is struggling")
+            print(" → Slow (struggling)")
         else:
-            print(" ← Very slow — serious difficulty")
+            print(" → Very slow (serious difficulty)")
 
         # Step 3: Update history
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] 📊 STEP 3: UPDATING STUDENT MODEL")
         model[concept]["attempts"] += 1
         if correct:
             model[concept]["correct_streak"] = model[concept].get("correct_streak", 0) + 1
+            print(f"  → Answer is CORRECT ✓")
         else:
             model[concept]["correct_streak"] = 0
+            print(f"  → Answer is WRONG ✗")
 
         self.blackboard.write("student_model",       model)
         self.blackboard.write("last_answer_text",    answer_text)
@@ -170,6 +182,8 @@ class OrchestratorAgent(BaseAgent):
         self.blackboard.write("total_questions", total_q + 1)
         if correct:
             self.blackboard.write("total_correct", total_c + 1)
+        print(f"  → Attempts for '{concept}': {model[concept]['attempts']}")
+        print(f"  → Overall progress: {total_c + (1 if correct else 0)}/{total_q + 1} correct ({100*(total_c + (1 if correct else 0))/(total_q + 1):.1f}%)")
 
         self.blackboard.log_thinking(
             "Orchestrator",
@@ -180,27 +194,36 @@ class OrchestratorAgent(BaseAgent):
         )
 
         # Step 4: BKT
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] 📈 STEP 4: RUNNING BKT (Bayesian Knowledge Tracing)")
         self.bkt.run()
+        print(f"  → BKT updated")
 
         # Step 5: IRT
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] 📊 STEP 5: RUNNING IRT (Item Response Theory)")
         self.irt.run()
+        print(f"  → IRT updated")
 
         # Step 6: LLM reasoning
-        print(f"\n  [Orchestrator] Step 6: LLM reasoning about next action...")
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] 🤖 STEP 6: LLM REASONING FOR NEXT ACTION")
         decision = self._llm_reason(concept, correct, time_ratio, hint_used)
         self.blackboard.write("llm_decision", decision)
+        print(f"  → Decision made: {decision.get('action', 'UNKNOWN')}")
 
         # Step 7: Execute
         action = decision["action"]
-        print(f"\n  [Orchestrator] Step 7: Executing action → {action}")
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] ⚡ STEP 7: EXECUTING ACTION → {action}")
         self._execute_action(action)
+        print(f"  → Action executed")
 
         # Step 8: Save
+        print(f"\n  [ORCHESTRATOR-ANSWER-FLOW] 💾 STEP 8: SAVING STATE")
         self.blackboard.save()
+        print(f"  → Session saved")
 
-        print(f"\n{'═'*55}")
-        print(f"  ORCHESTRATOR: Done. Next action: {action}")
-        print(f"{'═'*55}")
+        print(f"\n{'═'*70}")
+        print(f"  [ORCHESTRATOR-ANSWER-FLOW] ✅ ANSWER PROCESSING COMPLETE")
+        print(f"  Next action: {action}")
+        print(f"  {'═'*70}")
 
         return decision
 
@@ -219,16 +242,23 @@ class OrchestratorAgent(BaseAgent):
         question_type = question.get("type", "essay")
 
         if question_type == "mcq":
+            # ════════════════════════════════════════════════════════════
+            # MCQ GRADING: NO LLM CALL - INSTANT COMPARISON
             # correct_answer is always the FULL TEXT of the correct option.
-            # The frontend sends back the full option text the student selected.
+            # ════════════════════════════════════════════════════════════
             student_ans = answer_text.strip().lower()
             correct_ans = question.get("correct_answer", "").strip().lower()
+
+            print(f"\n  [GRADER-MCQ] 🎯 INSTANT MCQ GRADING (NO LLM)")
+            print(f"  Student's choice: {answer_text[:70]!r}")
+            print(f"  Hidden correct  : {question.get('correct_answer', '')[:70]!r}")
 
             # Exact match (after normalisation)
             if student_ans == correct_ans:
                 correct = True
+                print(f"  Comparison      : EXACT MATCH ✓")
             else:
-                # Fallback: check if student sent just a letter (A/B/C/D) —
+                # Fallback: check if student sent just a letter (A/B/C/D)
                 # map it to the option at that index and compare.
                 opts = question.get("options", [])
                 letter_map = {"a": 0, "b": 1, "c": 2, "d": 3}
@@ -236,68 +266,51 @@ class OrchestratorAgent(BaseAgent):
                     idx = letter_map[student_ans]
                     if idx < len(opts):
                         correct = opts[idx].strip().lower() == correct_ans
+                        print(f"  Comparison      : Letter '{student_ans.upper()}' mapped to option {'✓' if correct else '✗'}")
                     else:
                         correct = False
+                        print(f"  Comparison      : Letter '{student_ans.upper()}' out of range ✗")
                 else:
                     # Partial containment: student's answer contains the correct text
                     correct = correct_ans in student_ans or student_ans in correct_ans
+                    if correct:
+                        print(f"  Comparison      : Partial match (containment) ✓")
+                    else:
+                        print(f"  Comparison      : NO MATCH ✗")
 
-            print(f"  [Orchestrator] MCQ Grading:")
-            print(f"  Student chose : {answer_text[:80]!r}")
-            print(f"  Correct answer: {question.get('correct_answer', '')[:80]!r}")
-            print(f"  Result        : {'✓ CORRECT' if correct else '✗ WRONG'}")
+            print(f"  Result          : {'✅ CORRECT' if correct else '❌ WRONG'}")
+            print(f"  Elapsed time    : 0ms (instant - no LLM)")
             return correct
 
-        # ── Essay grading ─────────────────────────────────────
-        concept  = self.blackboard.read("current_concept")
-        contexts = self.blackboard.read("concept_contexts") or {}
-        ctx      = contexts.get(concept, "")
+        # ════════════════════════════════════════════════════════════
+        # ESSAY GRADING: INSTANT COMPARISON (NO LLM CALL)
+        # ════════════════════════════════════════════════════════════
+        print(f"\n  [GRADER-ESSAY] 📝 INSTANT ESSAY GRADING (NO LLM)")
+        print(f"  Student's answer: {answer_text[:70]!r}")
 
-        prompt = f"""You are grading a student's short-answer question for a university course.
+        # Get key_points the student should address
+        key_points = question.get("key_points", [])
+        print(f"  Expected key points: {key_points}")
 
-Concept being tested: {concept}
+        # Simple grading: check if student's answer contains key points
+        student_answer_lower = answer_text.lower()
+        points_covered = 0
+        for kp in key_points:
+            if kp.lower() in student_answer_lower:
+                points_covered += 1
 
-Lecture context (source of truth):
-\"\"\"
-{ctx[:600]}
-\"\"\"
+        # Grade based on coverage
+        coverage_ratio = points_covered / len(key_points) if key_points else 0.5
+        # Accept if student covers at least 50% of key points
+        correct = coverage_ratio >= 0.5
 
-Question: {question.get('question', '')}
-
-Key points the answer should cover:
-{question.get('key_points', [])}
-
-Model answer:
-{question.get('expected_answer', '')}
-
-Student's answer:
-\"\"\"
-{answer_text}
-\"\"\"
-
-Grading rules:
-- Mark TRUE if the student demonstrates understanding of at least 60% of the key points.
-- Be lenient with wording — paraphrasing is fine.
-- Do NOT penalise for minor spelling mistakes.
-- Mark FALSE only if the student clearly misunderstands the concept or provides an empty/irrelevant answer.
-
-Respond with ONLY one word: true  OR  false"""
-
-        try:
-            result  = call_llm(prompt, max_tokens=10).strip().lower()
-            correct = "true" in result
-            print(f"  [Orchestrator] Essay Grading: {'✓ CORRECT' if correct else '✗ WRONG'} (LLM said: {result!r})")
-        except Exception as e:
-            print(f"  [Orchestrator] LLM grading failed: {e} — using lexical fallback")
-            expected     = " ".join(question.get("key_points", [])).lower().split()
-            answer_words = set(answer_text.lower().split())
-            overlap      = sum(1 for word in expected if word in answer_words)
-            correct      = overlap >= max(1, len(expected) // 4)
-            print(f"  [Orchestrator] Lexical fallback: {'✓ CORRECT' if correct else '✗ WRONG'} (overlap {overlap}/{len(expected)})")
+        print(f"  Key points covered: {points_covered}/{len(key_points)} ({100*coverage_ratio:.0f}%)")
+        print(f"  Result          : {'✅ CORRECT' if correct else '❌ WRONG'}")
+        print(f"  Elapsed time    : 0ms (instant - no LLM)")
 
         self.blackboard.log_thinking(
             "Orchestrator",
-            f"Essay grading: {'CORRECT ✓' if correct else 'WRONG ✗'}."
+            f"Essay grading: {'CORRECT ✓' if correct else 'WRONG ✗'} ({points_covered}/{len(key_points)} key points)."
         )
         return correct
 

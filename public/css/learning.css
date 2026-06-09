@@ -548,7 +548,8 @@ body.dark .processing-state { background: rgba(19,22,41,0.9); }
 .proc-icon svg { width: 30px; height: 30px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
 
 .proc-title { font-family: var(--font-head); font-size: 19px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
-.proc-sub   { color: var(--text2); font-size: 13px; margin-bottom: 26px; }
+.proc-sub   { color: var(--text2); font-size: 13px; margin-bottom: 6px; }
+.proc-status { color: var(--text3); font-size: 13px; margin-bottom: 20px; }
 
 .proc-steps { display: flex; flex-direction: column; gap: 7px; text-align: left; }
 
