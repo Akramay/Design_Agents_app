@@ -1,0 +1,273 @@
+{
+  "file_path": "D:\\University_files\\Courses\\Mobile_programming\\Project\\Design_Agents_app\\uploads\\1781108225851-CSC441_Lecture_7.pdf",
+  "student_id": "student_001",
+  "lecture_text": null,
+  "concept_graph": [
+    {
+      "concept": "Vocabulary",
+      "difficulty": 1,
+      "depends_on": [],
+      "summary": "Fluent speakers of a language bring an enormous amount of knowledge to bear during comprehension and production, with vocabulary being a useful lens to explore the acquisition of knowledge from text. The vocabulary is embodied in many forms, perhaps most obviously in the vocabulary, the rich representations we have of words and their meanings and usage. Fluent young adults possess between 30,000 and 100,000 words."
+    },
+    {
+      "concept": "Language Models",
+      "difficulty": 2,
+      "depends_on": [
+        "Vocabulary"
+      ],
+      "summary": "A language model is simply a computational system that can predict the next word from previous words, given a context or prefix of words, a language model assigns a probability distribution over the possible next words. A language model can predict words from the previous word or handful of words."
+    },
+    {
+      "concept": "Pretraining",
+      "difficulty": 3,
+      "depends_on": [
+        "Language Models",
+        "Vocabulary"
+      ],
+      "summary": "Pretraining is the process of learning knowledge about language and the world from iteratively predicting tokens in vast amounts of text, and the resulting pretrained models are called large language models. This process allows large language models to learn knowledge of language, context, and the world simply by being taught to predict the next word, again and again, based on context."
+    },
+    {
+      "concept": "Distributional Hypothesis",
+      "difficulty": 3,
+      "depends_on": [
+        "Vocabulary"
+      ],
+      "summary": "The Distributional Hypothesis is a theory that posits that we derive meaning from the company words keep, by analyzing which words frequently co-occur, we can build complex maps of meaning from text alone, even without direct real-world experience. This theory suggests that the meaning of a word is derived from its context and the words it is associated with."
+    },
+    {
+      "concept": "Large Language Models",
+      "difficulty": 4,
+      "depends_on": [
+        "Language Models",
+        "Pretraining"
+      ],
+      "summary": "A large language model is a computational agent that can interact conversationally with people, and is a larger version of what we\u2019ve seen before, such as n-gram models. Large language models can predict words given contexts of thousands or even tens of thousands of words, and can learn all the knowledge of language, context, and the world simply by being taught to predict the next word."
+    },
+    {
+      "concept": "Probability Distribution",
+      "difficulty": 4,
+      "depends_on": [
+        "Language Models"
+      ],
+      "summary": "A language model assigns a probability distribution over the possible next words, given a context or prefix of words. This probability distribution is a key component of language models, and allows them to predict the likelihood of different words following a given context."
+    },
+    {
+      "concept": "Conditional Generation of Text",
+      "difficulty": 5,
+      "depends_on": [
+        "Large Language Models",
+        "Language Models",
+        "Pretraining"
+      ],
+      "summary": "Conditional generation of text is a key aspect of large language models, which can generate text based on a given context or prompt, and can be used to interact conversationally with people. This process involves predicting the next word in a sequence, given the context and the previous words, and can be used to generate coherent and natural-sounding text."
+    }
+  ],
+  "current_concept": "Vocabulary",
+  "student_model": {
+    "Vocabulary": {
+      "bkt_p_learned": 0.47265625,
+      "bkt_p_transit": 0.25,
+      "bkt_p_slip": 0.05,
+      "bkt_p_guess": 0.25,
+      "mastered": false,
+      "irt_theta": 0.08068242641099853,
+      "irt_b_current": -0.5,
+      "attempts": 1,
+      "history": [
+        "correct"
+      ],
+      "correct_streak": 1
+    },
+    "Language Models": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.2,
+      "bkt_p_slip": 0.08,
+      "bkt_p_guess": 0.22,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": -0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Pretraining": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.17,
+      "bkt_p_slip": 0.1,
+      "bkt_p_guess": 0.2,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Distributional Hypothesis": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.17,
+      "bkt_p_slip": 0.1,
+      "bkt_p_guess": 0.2,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Large Language Models": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.13,
+      "bkt_p_slip": 0.12,
+      "bkt_p_guess": 0.18,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Probability Distribution": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.13,
+      "bkt_p_slip": 0.12,
+      "bkt_p_guess": 0.18,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 0.5,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    },
+    "Conditional Generation of Text": {
+      "bkt_p_learned": 0.1,
+      "bkt_p_transit": 0.1,
+      "bkt_p_slip": 0.15,
+      "bkt_p_guess": 0.15,
+      "mastered": false,
+      "irt_theta": 0.0,
+      "irt_b_current": 1.0,
+      "attempts": 0,
+      "history": [],
+      "correct_streak": 0
+    }
+  },
+  "last_answer_text": "Vocabulary is the rich representations we have of words and their meanings and usage.",
+  "last_answer_correct": true,
+  "last_time_taken": 30.0,
+  "last_time_ratio": 1.2,
+  "last_question": {
+    "question": "What is vocabulary in the context of language knowledge?",
+    "options": [
+      "Vocabulary is the scale of knowledge that a child must learn to reach fluent speaking level.",
+      "Vocabulary refers to the ability to comprehend and produce spoken language.",
+      "Vocabulary is the rich representations we have of words and their meanings and usage.",
+      "Vocabulary is the process of pretraining that makes Large Language Models possible."
+    ],
+    "correct_answer": "Vocabulary is the rich representations we have of words and their meanings and usage.",
+    "explanation": "This knowledge is embodied in many forms, perhaps most obviously in the vocabulary, the rich representations we have of words and their meanings and usage.",
+    "key_points": [
+      "Vocabulary"
+    ],
+    "expected_time_seconds": 25,
+    "concept": "Vocabulary",
+    "b": -1.5,
+    "difficulty": "easy \u2014 identify or recognize which concept applies",
+    "type": "mcq"
+  },
+  "current_question": {
+    "question": "Explain how vocabulary serves as a useful lens to explore the acquisition of knowledge from text, referencing the scale of knowledge possessed by fluent young adults and the role of pretraining in Large Language Models.",
+    "expected_answer": "Vocabulary is a useful lens to explore the acquisition of knowledge from text because it embodies the rich representations we have of words and their meanings and usage. Fluent young adults possess between 30,000 and 100,000 words, which they acquire through a process of learning from text. The central new idea that makes LLMs possible, pretraining, allows machines to learn from text in a similar way. By examining how vocabulary is acquired and used, we can gain insights into how both people and machines learn from text.",
+    "key_points": [
+      "vocabulary as a useful lens",
+      "scale of knowledge possessed by fluent young adults",
+      "pretraining in LLMs",
+      "acquisition of knowledge from text",
+      "comparison between human and machine learning"
+    ],
+    "expected_time_seconds": 35,
+    "concept": "Vocabulary",
+    "b": -0.5,
+    "difficulty": "medium \u2014 describe how it works with a simple example",
+    "type": "essay"
+  },
+  "asked_questions": [
+    {
+      "concept": "Vocabulary",
+      "type": "mcq",
+      "text_hash": "18e43fe164673665db70dfeed4a51ced",
+      "keywords": [
+        "context",
+        "knowledge",
+        "language",
+        "vocabulary"
+      ]
+    },
+    {
+      "concept": "Vocabulary",
+      "type": "essay",
+      "text_hash": "9603bdb90f21fb001a758c6a94b8eb8e",
+      "keywords": [
+        "acquisition",
+        "adults",
+        "explain",
+        "explore",
+        "fluent",
+        "from",
+        "knowledge",
+        "language"
+      ]
+    }
+  ],
+  "hint_available": true,
+  "hint_used_current_question": false,
+  "llm_decision": {
+    "reasoning": "The student has answered correctly but the BKT probability of 0.473 indicates they are still uncertain about the concept, and the time ratio of 1.20x suggests they may not have a genuine understanding. The fact that no hint was used is a positive signal, but more evidence is needed to confirm their understanding. The best next action is to keep the current level and gather more information.",
+    "action": "KEEP_LEVEL",
+    "message_to_student": "You're on the right track, keep going and you'll reinforce your understanding of vocabulary concepts. Let's try another question to help solidify your knowledge."
+  },
+  "agent_thinking": [
+    {
+      "agent": "Orchestrator",
+      "message": "Answer graded: CORRECT \u2713. Time ratio: 1.20x. Running BKT and IRT updates...",
+      "timestamp": "19:17:55"
+    },
+    {
+      "agent": "BKTAgent",
+      "message": "P(learned) for 'Vocabulary': 0.100 -> 0.473. needs more evidence.",
+      "timestamp": "19:17:55"
+    },
+    {
+      "agent": "IRTAgent",
+      "message": "\u03b8 updated: 0.000 \u2192 0.081 (\u25b2 up). Next question difficulty: b=-0.5 (P(correct)\u22480.64). Student level: Average \u2014 solid foundation",
+      "timestamp": "19:17:55"
+    },
+    {
+      "agent": "Orchestrator",
+      "message": "LLM Decision: KEEP_LEVEL. Reasoning: The student has answered correctly but the BKT probability of 0.473 indicates they are still uncertain about the concept, and the time ratio of 1.20x suggests they may not have a genuine understanding. The fact that no hint was used is a positive signal, but more evidence is needed to confirm their understanding. The best next action is to keep the current level and gather more information.",
+      "timestamp": "19:17:57"
+    },
+    {
+      "agent": "QuestionAgent",
+      "message": "Generated essay question for 'Vocabulary' (b=-0.5)",
+      "timestamp": "19:17:59"
+    }
+  ],
+  "next_b": -0.5,
+  "hint": null,
+  "explanation": null,
+  "videos": [],
+  "session_started": "2026-06-10T19:17:08.575717",
+  "total_questions": 1,
+  "total_correct": 1,
+  "lecture_title": "1781108225851-CSC441_Lecture_7.pdf",
+  "concept_contexts": {
+    "Vocabulary": "Large Language Models\n5\n5/1/2026\n\u2022 The central new idea that makes LLMs possible is the idea \nof pretraining, so let\u2019s begin by thinking about the idea of \nlearning from text, the basic way that LLMs are trained.\n\u2022 We know that fluent speakers of a language bring an \nenormous amount of knowledge to bear during \ncomprehension and production.\n\u2022 This knowledge is embodied in many forms, perhaps most \nobviously in the vocabulary, the rich representations we \nhave of words and their meanings and usage.\n\u2022 This makes the vocabulary a useful lens to explore the \nacquisition of knowledge from text, by both people and \nmachines.\n\nLarge Language Models\n6\n5/1/2026\n\u2022 The Scale of Knowledge: Fluent young adults \npossess between 30,000 and 100,000 words. To \nreach this level, a child must learn approxima",
+    "Language Models": "CSC441\nFoundation of Natural Language \nProcessing\nDr. Maryam Al-Berry\nMariam.csc0275@miuegypt.edu.eg\n5/1/2026\n1\n\nContents\n\u2022 Large Language Models (LLMs)\n\u2022 Three Architectures of LLMs\n\u2022 Conditional Generation of Text\n\u2022 Prompting\n\u2022 Generation and Sampling\n\u2022 Training Large Language Models\n\u2022 Evaluating Large Language Models\n\u2022 Ethical and Safety Issues with Language \nModels\n\nLarge Language Models\n3\n5/1/2026\n\u2022 Large Language Model, or LLM, is a computational \nagent that can interact conversationally with \npeople.\n\u2022 The fact that LLMs are designed for interaction with \npeople has strong implications for their design and \nuse.\n\u2022 Many of these implications already became \nclear in a computational system from 60 years \nago, ELIZA (Weizenbaum, 1966).",
+    "Pretraining": "Large Language Models\n5\n5/1/2026\n\u2022 The central new idea that makes LLMs possible is the idea \nof pretraining, so let\u2019s begin by thinking about the idea of \nlearning from text, the basic way that LLMs are trained.\n\u2022 We know that fluent speakers of a language bring an \nenormous amount of knowledge to bear during \ncomprehension and production.\n\u2022 This knowledge is embodied in many forms, perhaps most \nobviously in the vocabulary, the rich representations we \nhave of words and their meanings and usage.\n\u2022 This makes the vocabulary a useful lens to explore the \nacquisition of knowledge from text, by both people and \nmachines.\n\nLarge Language Models\n8\n5/1/2026\n\u2022 What made the modern NLP revolution possible is \nthat large language models can learn all this \nknowledge of language, context, and the w",
+    "Distributional Hypothesis": "Large Language Models\n7\n5/1/2026\n\u2022 The Multiplier Effect: Interestingly, vocabulary \ngrowth can actually outpace the appearance of \nnew words. This suggests that reading a single \nword strengthens the mental representations of \nmany other associated words simultaneously.\n\u2022 The Distributional Hypothesis: This theory posits \nthat we derive meaning from the company words \nkeep. By analyzing which words frequently co-\noccur, we (and machines) can build complex maps \nof meaning from text alone, even without direct \nreal-world experience.",
+    "Large Language Models": "Contents\n\u2022 Large Language Models (LLMs)\n\u2022 Three Architectures of LLMs\n\u2022 Conditional Generation of Text\n\u2022 Prompting\n\u2022 Generation and Sampling\n\u2022 Training Large Language Models\n\u2022 Evaluating Large Language Models\n\u2022 Ethical and Safety Issues with Language \nModels\n\nLarge Language Models\n3\n5/1/2026\n\u2022 Large Language Model, or LLM, is a computational \nagent that can interact conversationally with \npeople.\n\u2022 The fact that LLMs are designed for interaction with \npeople has strong implications for their design and \nuse.\n\u2022 Many of these implications already became \nclear in a computational system from 60 years \nago, ELIZA (Weizenbaum, 1966).\n\nLarge Language Models\n4\n5/1/2026\n\u2022 ELIZA, \ndesigned \nto \nsimulate \na \nRogerian \npsychologist, illustrates a number of important \nissues with chatbots.\n\u2022 For examp",
+    "Probability Distribution": "Large Language Models\n9\n5/1/2026\n\u2022 What is a large language model?\n\u2013 As we saw before, a language model is simply a \ncomputational system that can predict the next word \nfrom previous words.\n\u2013 That is, given a context or prefix of words, a language \nmodel assigns a probability distribution over the \npossible next words.\n\nThree Architectures of Language Models\n17\n5/1/2026\n\u2022 The Encoder-Decoder (Translation):\n\u2013 This hybrid approach is best for tasks where the input and output \nvary significantly in length or language.\n\u2013 The \"loose relationship\" between input and output makes it ideal \nfor machine translation and speech recognition.\n\u2022 Underlying Technology:\n\u2013 While these architectures can be built using various neural \nnetworks (like LSTMs or State Space Models), the Transformer is \ncurrently",
+    "Conditional Generation of Text": "Contents\n\u2022 Large Language Models (LLMs)\n\u2022 Three Architectures of LLMs\n\u2022 Conditional Generation of Text\n\u2022 Prompting\n\u2022 Generation and Sampling\n\u2022 Training Large Language Models\n\u2022 Evaluating Large Language Models\n\u2022 Ethical and Safety Issues with Language \nModels\n\n5/1/2026\n18\nConditional \nGeneration of \nText\n\nConditional Generation of Text\n19\n5/1/2026\n\u2022 Conditional generation is the task of generating \ntext conditioned on an input piece of text.\n\u2022 That is, we give the LLM an input piece of text, a \nprompt, and then have the LLM continue \ngenerating text token by token, conditioned on the \nprompt and the subsequently generated tokens.\n\u2022 We generate from a model by first computing the \nprobability of the next token wi from the prior \ncontext: P(wi|w<i) and then sampling from that \ndistribution to"
+  },
+  "bkt_mastered": false
+}
