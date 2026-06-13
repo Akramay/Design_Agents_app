@@ -25,6 +25,12 @@ function createResponsePayload(response, operation) {
   };
 }
 
+function parseBoolean(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
+  return Boolean(value);
+}
+
 function buildErrorBody(error, operation) {
   const message = String(error?.message || error || 'Unexpected backend error.');
   const body = {
@@ -191,14 +197,16 @@ router.post('/session/setup', (req, res) => {
 router.post('/session/answer', (req, res) => {
   const operation = 'session_answer';
   try {
-    const { session_id, answer, timeTaken, hintUsed } = req.body || {};
+    const { session_id, answer } = req.body || {};
+    const timeTaken = req.body?.timeTaken ?? req.body?.time_taken;
+    const hintUsed = req.body?.hintUsed ?? req.body?.hint_used;
     log(`Received ${operation}`, { session_id, answer, timeTaken, hintUsed });
     const response = runPythonBridge({
       action: 'answer',
       session_id: session_id,
       answer: answer || '',
       time_taken: Number.isFinite(Number(timeTaken)) ? Number(timeTaken) : 30,
-      hint_used: Boolean(hintUsed),
+      hint_used: parseBoolean(hintUsed),
     });
 
     res.status(response.ok ? 200 : 500).json(createResponsePayload(response, operation));

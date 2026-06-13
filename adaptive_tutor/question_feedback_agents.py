@@ -134,6 +134,7 @@ class QuestionAgent(BaseAgent):
         self.blackboard.write("hint",                        None)
         self.blackboard.write("explanation",                 None)
         self.blackboard.write("videos",                      [])
+        self.blackboard.write("adaptive_feedback",           None)
         self.blackboard.write("hint_available",              True)
         self.blackboard.write("hint_used_current_question",  False)
 

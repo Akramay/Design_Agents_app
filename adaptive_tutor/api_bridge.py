@@ -70,8 +70,10 @@ def _serialize_session(bb, session_id):
         "student_model": model,
         "hint": bb.read("hint"),
         "hint_available": bb.read("hint_available"),
+        "hint_used_current_question": bool(bb.read("hint_used_current_question")),
         "explanation": bb.read("explanation"),
         "videos": bb.read("videos") or [],
+        "adaptive_feedback": bb.read("adaptive_feedback"),
         "agent_thinking": bb.read("agent_thinking") or [],
         "llm_decision": bb.read("llm_decision"),
         "last_answer_correct": bb.read("last_answer_correct"),
@@ -129,13 +131,15 @@ def _handle_request(payload):
         
         answer_text = payload.get("answer", "")
         time_taken = float(payload.get("time_taken", 30))
-        hint_used = bool(payload.get("hint_used", False))
-        
         # Build system and resume session
         orchestrator, bb = build_system(resume=True, save_path=session_path)
         
         if not bb.read("current_question"):
             raise RuntimeError("No active question. Session may be corrupted.")
+
+        hint_used = bool(payload.get("hint_used", False)) or bool(
+            bb.read("hint_used_current_question")
+        )
         
         # Process answer
         decision = orchestrator.process_answer(answer_text, time_taken, hint_used)
@@ -169,6 +173,7 @@ def _handle_request(payload):
         feedback_agent = FeedbackAgent(bb)
         bb.write("llm_decision", {"action": "SHOW_HINT"})
         feedback_agent.run()
+        bb.write("hint_used_current_question", True)
         bb.save()
         
         return {

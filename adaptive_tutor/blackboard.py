@@ -53,6 +53,7 @@ class Blackboard:
             "hint":                 None,
             "explanation":          None,
             "videos":               [],
+            "adaptive_feedback":    None,
 
             # ── session metadata ─────────────────────────
             "session_started":      datetime.now().isoformat(),

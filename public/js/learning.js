@@ -257,7 +257,7 @@ async function startProcessing() {
 function applySession(session, decision) {
   App.session = session;
   App.questionStartedAt = Date.now();
-  App.hintUsed = false;
+  App.hintUsed = Boolean(session.hint_used_current_question);
 
   const question = session.current_question || {};
   const conceptState = session.current_concept_state || {};
@@ -420,12 +420,19 @@ function renderThinking(entries) {
   });
 }
 
-function renderFeedback(session) {
+function renderFeedback(session, options = {}) {
   const hintBlock = document.getElementById('hintBlock');
   const explanationBlock = document.getElementById('explanationBlock');
   const videoList = document.getElementById('videoList');
+  const feedback = options.includeAdaptive && session.adaptive_feedback
+    ? {
+        hint: session.adaptive_feedback.hint,
+        explanation: session.adaptive_feedback.explanation,
+        videos: session.adaptive_feedback.videos || [],
+      }
+    : session;
 
-  if (session.hint) {
+  if (feedback.hint) {
     hintBlock.classList.remove('hidden');
     hintBlock.innerHTML = `
       <div class="feedback-label">
@@ -436,14 +443,14 @@ function renderFeedback(session) {
         </svg>
         Hint
       </div>
-      <div class="feedback-content">${escapeHtml(session.hint)}</div>
+      <div class="feedback-content">${escapeHtml(feedback.hint)}</div>
     `;
   } else {
     hintBlock.classList.add('hidden');
     hintBlock.innerHTML = '';
   }
 
-  if (session.explanation) {
+  if (feedback.explanation) {
     explanationBlock.classList.remove('hidden');
     explanationBlock.innerHTML = `
       <div class="feedback-label">
@@ -454,14 +461,14 @@ function renderFeedback(session) {
         </svg>
         Explanation
       </div>
-      <div class="feedback-content">${escapeHtml(session.explanation)}</div>
+      <div class="feedback-content">${escapeHtml(feedback.explanation)}</div>
     `;
   } else {
     explanationBlock.classList.add('hidden');
     explanationBlock.innerHTML = '';
   }
 
-  if ((session.videos || []).length) {
+  if ((feedback.videos || []).length) {
     videoList.classList.remove('hidden');
     videoList.innerHTML = `
       <div class="feedback-label">
@@ -470,7 +477,7 @@ function renderFeedback(session) {
         </svg>
         Recommended Videos
       </div>
-      ${session.videos.map((video) => `
+      ${feedback.videos.map((video) => `
         <a class="video-card" href="${escapeAttribute(video.url || '#')}" target="_blank" rel="noreferrer">
           <strong>${escapeHtml(video.title || 'Video')}</strong>
           <span>${escapeHtml(video.channel || 'Open recommendation')}</span>
@@ -582,7 +589,7 @@ async function submitAnswer() {
 
     // Show the feedback for the CURRENT question using the returned session data
     renderFeedbackMessage(data.session, data.decision);
-    renderFeedback(data.session);
+    renderFeedback(data.session, { includeAdaptive: true });
 
     // Disable answer inputs so student can't re-submit
     const answerInput = document.getElementById('answerInput');

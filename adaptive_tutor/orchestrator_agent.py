@@ -227,6 +227,25 @@ class OrchestratorAgent(BaseAgent):
 
         return decision
 
+    def _fallback_action(
+        self, concept: str, correct: bool, time_ratio: float, hint_used: bool,
+        bkt_p: float, theta: float, all_mastered: bool, model: dict,
+        recent_wrong: int
+    ) -> tuple[str, str]:
+        if all_mastered:
+            return "SESSION_COMPLETE", "You have mastered all detected concepts in this lecture. Well done!"
+        if model.get("mastered"):
+            return "NEXT_CONCEPT", f"You have mastered {concept}. Moving to the next concept."
+        if not correct and recent_wrong >= 2 and bkt_p < 0.40:
+            return "RECOMMEND_VIDEO", f"Let's reinforce {concept} with an explanation and a useful video before continuing."
+        if not correct and (bkt_p < 0.50 or time_ratio > 1.5):
+            return "SHOW_EXPLANATION", f"Let's slow down and reinforce {concept} with a detailed explanation."
+        if not correct:
+            return "DECREASE_DIFFICULTY", f"We'll keep working on {concept} with a more approachable question."
+        if time_ratio < 0.8 and theta >= 0 and not hint_used:
+            return "INCREASE_DIFFICULTY", f"Great work on {concept}! Time to try something harder."
+        return "KEEP_LEVEL", f"Good progress on {concept}. One more question at this level."
+
     # ── PERCEIVE / REASON / ACT (agent interface) ─────────────
     def perceive(self):
         return {}
@@ -328,6 +347,7 @@ class OrchestratorAgent(BaseAgent):
         theta  = model["irt_theta"]
         next_b = model["irt_b_current"]
         hist   = model["history"][-6:]
+        recent_wrong = sum(1 for item in hist[-3:] if "wrong" in str(item))
 
         prompt = f"""You are an intelligent adaptive tutoring agent for a university course.
 A student just answered a question. Use the signals below to decide the next action.
@@ -377,30 +397,46 @@ Action guide:
         except Exception as e:
             print(f"  [Orchestrator] LLM reasoning failed: {e} — using fallback logic")
 
-            if all_mastered:
-                action = "SESSION_COMPLETE"
-                msg    = "You have mastered all detected concepts in this lecture. Well done!"
-            elif model["mastered"]:
-                action = "NEXT_CONCEPT"
-                msg    = f"You have mastered {concept}. Moving to the next concept."
-            elif not correct and bkt_p < 0.35:
-                action = "SHOW_EXPLANATION"
-                msg    = f"Let's slow down and reinforce {concept} with a detailed explanation."
-            elif not correct:
-                action = "DECREASE_DIFFICULTY"
-                msg    = f"We'll keep working on {concept} with a more approachable question."
-            elif time_ratio < 0.8 and theta >= 0 and not hint_used:
-                action = "INCREASE_DIFFICULTY"
-                msg    = f"Great work on {concept}! Time to try something harder."
-            else:
-                action = "KEEP_LEVEL"
-                msg    = f"Good progress on {concept}. One more question at this level."
+            action, msg = self._fallback_action(
+                concept, correct, time_ratio, hint_used, bkt_p, theta,
+                all_mastered, model, recent_wrong
+            )
 
             decision = {
                 "reasoning": "Fallback policy applied based on BKT/IRT/correctness signals.",
                 "action":    action,
                 "message_to_student": msg,
             }
+
+        allowed_actions = {
+            "INCREASE_DIFFICULTY", "KEEP_LEVEL", "DECREASE_DIFFICULTY",
+            "SHOW_HINT", "SHOW_EXPLANATION", "RECOMMEND_VIDEO",
+            "NEXT_CONCEPT", "SESSION_COMPLETE",
+        }
+        if decision.get("action") not in allowed_actions:
+            action, msg = self._fallback_action(
+                concept, correct, time_ratio, hint_used, bkt_p, theta,
+                all_mastered, model, recent_wrong
+            )
+            decision["action"] = action
+            decision["message_to_student"] = msg
+
+        if not correct and recent_wrong >= 2 and bkt_p < 0.40:
+            decision["action"] = "RECOMMEND_VIDEO"
+            decision["reasoning"] = (
+                "Adaptive policy override: repeated wrong answers with low BKT indicate the student needs external reinforcement before more questions."
+            )
+            decision["message_to_student"] = (
+                f"{concept} still looks shaky, so here is an explanation and a video resource before the next question."
+            )
+        elif not correct and (bkt_p < 0.50 or time_ratio > 1.5):
+            decision["action"] = "SHOW_EXPLANATION"
+            decision["reasoning"] = (
+                "Adaptive policy override: the answer was wrong and the BKT/time signals show uncertainty, so explanation is more useful than another immediate question."
+            )
+            decision["message_to_student"] = (
+                f"Let's pause and explain {concept} before continuing with another question."
+            )
 
         print(f"\n  [Orchestrator] Decision → {decision['action']}")
         print(f"  Reasoning: {decision['reasoning']}")
@@ -415,10 +451,18 @@ Action guide:
     # ── PRIVATE: Route action ─────────────────────────────────
     def _execute_action(self, action: str):
         self.blackboard.write("hint_used_current_question", False)
+        self.blackboard.write("adaptive_feedback", None)
 
         if action in ["SHOW_HINT", "SHOW_EXPLANATION", "RECOMMEND_VIDEO"]:
             self.feedback.run()
+            adaptive_feedback = {
+                "action": action,
+                "hint": self.blackboard.read("hint"),
+                "explanation": self.blackboard.read("explanation"),
+                "videos": self.blackboard.read("videos") or [],
+            }
             self.question.run()       # always generate a new question after feedback
+            self.blackboard.write("adaptive_feedback", adaptive_feedback)
         elif action == "NEXT_CONCEPT":
             self._advance_to_next_concept()
             self.question.run()
