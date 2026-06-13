@@ -523,8 +523,8 @@ async function requestHint() {
       body: JSON.stringify({ session_id: sessionId }),
     });
 
-    App.hintUsed = true;
-    applySession(data.session);
+    applySession(data.session);   // ← apply session state first
+    App.hintUsed = true;          // ← set the flag AFTER, so it sticks
     showNotif('Hint provided. This will affect your learning score.');
   } catch (error) {
     showNotif(error.message || 'Could not get hint.');
@@ -572,8 +572,8 @@ async function submitAnswer() {
       body: JSON.stringify({
         session_id: sessionId,
         answer,
-        timeTaken: elapsedSeconds,
-        hintUsed: App.hintUsed,
+        time_taken: elapsedSeconds,
+        hint_used: App.hintUsed,
       }),
     });
 
