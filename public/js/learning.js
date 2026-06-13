@@ -588,6 +588,8 @@ async function submitAnswer() {
     App.pendingNextSession = data;
 
     // Show the feedback for the CURRENT question using the returned session data
+    const feedbackPanel = document.getElementById('feedbackPanel');
+    if (feedbackPanel) feedbackPanel.style.display = '';
     renderFeedbackMessage(data.session, data.decision);
     renderFeedback(data.session, { includeAdaptive: true });
 
@@ -646,6 +648,10 @@ function advanceToNextQuestion() {
   // Re-enable answer inputs
   const answerInput = document.getElementById('answerInput');
   if (answerInput) answerInput.disabled = false;
+
+  // Hide tutor response panel until the next answer is submitted
+  const feedbackPanel = document.getElementById('feedbackPanel');
+  if (feedbackPanel) feedbackPanel.style.display = 'none';
 
   applySession(session, decision);
 }

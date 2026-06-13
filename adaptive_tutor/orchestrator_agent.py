@@ -311,17 +311,26 @@ class OrchestratorAgent(BaseAgent):
         key_points = question.get("key_points", [])
         print(f"  Expected key points: {key_points}")
 
-        # Simple grading: check if student's answer contains key points
-        student_answer_lower = answer_text.lower()
+        # Smarter grading: match key points by significant word overlap, not exact substring
+        stop_words = {"the", "a", "an", "is", "are", "was", "were", "it", "its",
+                      "of", "in", "on", "at", "to", "for", "and", "or", "by",
+                      "with", "that", "this", "be", "as", "from"}
+
+        student_words = set(re.findall(r'\b[a-z]{3,}\b', answer_text.lower())) - stop_words
         points_covered = 0
         for kp in key_points:
-            if kp.lower() in student_answer_lower:
+            kp_words = set(re.findall(r'\b[a-z]{3,}\b', kp.lower())) - stop_words
+            if not kp_words:
+                continue
+            # A key point is "covered" if the student's answer shares at least
+            # half of its significant words, OR if the full phrase appears literally.
+            overlap = len(kp_words & student_words) / len(kp_words)
+            if overlap >= 0.5 or kp.lower() in answer_text.lower():
                 points_covered += 1
 
-        # Grade based on coverage
+        # Grade based on coverage — pass if student covers at least 40% of key points
         coverage_ratio = points_covered / len(key_points) if key_points else 0.5
-        # Accept if student covers at least 50% of key points
-        correct = coverage_ratio >= 0.5
+        correct = coverage_ratio >= 0.4
 
         print(f"  Key points covered: {points_covered}/{len(key_points)} ({100*coverage_ratio:.0f}%)")
         print(f"  Result          : {'✅ CORRECT' if correct else '❌ WRONG'}")
