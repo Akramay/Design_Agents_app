@@ -39,9 +39,7 @@ class BaseAgent:
         Must be overridden by each subclass.
         """
         raise NotImplementedError(f"{self.name} must implement act()")
-    def save(
-            
-            
+
     def run(self):
         """
         The agent loop: perceive → reason → act.
