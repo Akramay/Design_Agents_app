@@ -27,6 +27,10 @@ jobs:
     - name: Check Python Syntax
       run: |
         python -m py_compile adaptive_tutor/*.py
+    - 
+      
+      name: Run Python Tests
+      run:  pytest
 
     - name: Setup Node
       uses: actions/setup-node@v4
