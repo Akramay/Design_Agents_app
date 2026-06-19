@@ -1,4 +1,13 @@
-from adaptive_tutor.blackboard import Blackboard
+import sys
+import os
+
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "adaptive_tutor")
+    )
+)
+
+from blackboard import Blackboard
 
 
 def test_write_and_read():
