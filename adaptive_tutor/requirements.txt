@@ -26,4 +26,5 @@ flask-cors==4.0.0         # needed if frontend is on different port
 
 # ── Utilities ─────────────────────────────────────────────────
 python-dotenv==1.0.1 
-pytest     # for loading YOUTUBE_API_KEY from .env file
+pytest
+flake8     # for loading YOUTUBE_API_KEY from .env file

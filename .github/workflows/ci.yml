@@ -27,9 +27,12 @@ jobs:
     - name: Check Python Syntax
       run: |
         python -m py_compile adaptive_tutor/*.py
-    - 
+
+
+    - name: Lint Python Code
+      run: flake8 adaptive_tutor
       
-      name: Run Python Tests
+    - name: Run Python Tests
       run:  pytest
 
     - name: Setup Node
